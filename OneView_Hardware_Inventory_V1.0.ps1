@@ -314,7 +314,7 @@ foreach ($appliance in $Appliances) {
     if ($hardwareInventory) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Hardware inventory retrieved" -NoNewline -ForegroundColor DarkGray
-        Write-Host " successfully" -ForegroundColor Green
+        Write-Host " successfully" -NoNewline -ForegroundColor Green
         Write-Host " for appliance " -NoNewline -ForegroundColor DarkGray
         Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
         Write-Host "." -ForegroundColor DarkGray
