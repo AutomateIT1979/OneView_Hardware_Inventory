@@ -296,7 +296,7 @@ foreach ($appliance in $Appliances) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Connected to appliance " -NoNewline -ForegroundColor DarkGray
         Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
-        Write-Host "successfully" -ForegroundColor Green
+        Write-Host " successfully" -ForegroundColor Green
         Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Connected to appliance $FQDN successfully." -Level "OK" -NoConsoleOutput
     }
@@ -336,7 +336,7 @@ foreach ($appliance in $Appliances) {
     if (Test-Path -Path $csvFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Hardware inventory exported to CSV file " -NoNewline -ForegroundColor DarkGray
-        Write-Host " successfully." -ForegroundColor Green
+        Write-Host "successfully." -ForegroundColor Green
         Write-Log -Message "Hardware inventory exported to CSV file $csvFilePath successfully." -Level "OK" -NoConsoleOutput
     }
     else {
@@ -353,7 +353,7 @@ foreach ($appliance in $Appliances) {
     if (Test-Path -Path $excelFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Hardware inventory exported to Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host " successfully" -ForegroundColor Green
+        Write-Host "successfully" -ForegroundColor Green
         Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Hardware inventory exported to Excel file $excelFilePath successfully." -Level "OK" -NoConsoleOutput
     }
