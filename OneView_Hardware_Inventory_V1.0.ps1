@@ -187,8 +187,10 @@ else {
 $credentialFile = Join-Path -Path $credentialFolder -ChildPath "credential.txt"
 # increment $script:taskNumber after the function call
 $script:taskNumber++
-# Task 4: Check CSV & Excel Folders exists.
-Write-Host "`n$Spaces$($taskNumber). Check CSV & Excel Folders exists:`n" -ForegroundColor Magenta
+# Task 4: Check credential Folder exists.
+Write-Host "`n$Spaces$($taskNumber). Checking for credential file:`n" -ForegroundColor Magenta
+# Log the task
+Write-Log -Message "Checking for credential file." -Level "Info" -NoConsoleOutput
 # Check if the credential file exists
 if (-not (Test-Path -Path $credentialFile)) {
     # Prompt the user to enter their login and password
@@ -200,9 +202,6 @@ else {
     # Load the credential from the credential file
     $credential = Import-Clixml -Path $credentialFile
 }
-# Initialize arrays
-$allLocalUsers = @()
-$allLdapGroups = @()
 # Define the directories for the CSV and Excel files
 $csvDir = Join-Path -Path $script:ReportsDir -ChildPath 'CSV'
 $excelDir = Join-Path -Path $script:ReportsDir -ChildPath 'Excel'
@@ -255,21 +254,17 @@ else {
     # Write a message to the log file
     Write-Log -Message "Excel directory created at $excelDir" -Level "OK" -NoConsoleOutput
 }
-# Define the path to the CSV and Excel files for local users and LDAP groups
-$localUsersCsvPath = Join-Path -Path $csvDir -ChildPath 'LocalUsers.csv'
-$ldapGroupsCsvPath = Join-Path -Path $csvDir -ChildPath 'LdapGroups.csv'
-$localUsersExcelPath = Join-Path -Path $excelDir -ChildPath 'LocalUsers.xlsx'
-$ldapGroupsExcelPath = Join-Path -Path $excelDir -ChildPath 'LdapGroups.xlsx'
-$combinedUsersExcelPath = Join-Path -Path $excelDir -ChildPath 'CombinedUsers.xlsx'
 # increment $script:taskNumber after the function call
 $script:taskNumber++
-# Task 5: Collecting user details from each appliance
-Write-Host "`n$Spaces$($taskNumber). Collecting user details from each appliance:`n" -ForegroundColor Magenta
+# Task 5: Loop through the appliances list and get hardware inventory
+Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
+# Log the task
+Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput
 # Loop through each appliance
 foreach ($appliance in $Appliances) {
-    # Convert the FQDN to uppercase
-    $fqdn = $appliance.FQDN.ToUpper()
-    # Check for existing sessions and disconnect them
+    # Convert the FQDN to Upper Case
+    $FQDN = $appliance.FQDN.ToUpper()
+    # Check if there is a connection to the appliances
     $existingSessions = $ConnectedSessions
     if ($existingSessions) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
@@ -291,123 +286,97 @@ foreach ($appliance in $Appliances) {
         Write-Log -Message "No existing sessions found." -Level "Info" -NoConsoleOutput
     }
     # Use the Connect-OVMgmt cmdlet to connect to the appliance
-    Connect-OVMgmt -Hostname $fqdn -Credential $credential *> $null
-    Write-Host "`t1- Successfully connected to:" -NoNewline -ForegroundColor DarkGray
-    Write-Host " $fqdn" -ForegroundColor Green
-    Write-Log -Message "Successfully connected to: $fqdn" -Level "OK" -NoConsoleOutput
-    # Collect user details
-    Write-Host "`t2- Collecting user details from:" -NoNewline -ForegroundColor DarkGray
-    Write-Host " $fqdn"  -ForegroundColor Green
-    $users = Get-OVUser | ForEach-Object {
-        $_ | Add-Member -NotePropertyName 'Type of user' -NotePropertyValue ($_.permissions | ForEach-Object { $_.roleName }) -PassThru
+    Connect-OVMgmt -FQDN $FQDN -Credential $credential *> $null
+    # Check if the connection was successful
+    if ($?) {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Connected to appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
+        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Log -Message "Connected to appliance $FQDN successfully." -Level "OK" -NoConsoleOutput
     }
-    $allLocalUsers += $users
-    # Collect LDAP group details
-    Write-Host "`t3- Collecting LDAP group details from:" -NoNewline -ForegroundColor DarkGray
-    Write-Host " $fqdn" -ForegroundColor Green
-    $ldapGroups = Get-OVLdapGroup | ForEach-Object {
-        $_ | Add-Member -NotePropertyName 'Type of user' -NotePropertyValue ($_.permissions | ForEach-Object { $_.roleName }) -PassThru
+    else {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to connect to appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$FQDN" -NoNewline -ForegroundColor Red
+        Write-Host ": $_" -ForegroundColor Red
+        Write-Log -Message "Failed to connect to appliance "$FQDN": $_" -Level "Error" -NoConsoleOutput
+        continue
     }
-    $allLdapGroups += $ldapGroups
-    # Generate reports
-    Write-Host "`t4- Generating report for:" -NoNewline -ForegroundColor DarkGray
-    Write-Host " $fqdn" -ForegroundColor Green
+    # Get the hardware inventory
+    $hardwareInventory = Get-OVServer
+    # Check if the hardware inventory was retrieved successfully
+    if ($hardwareInventory) {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Hardware inventory retrieved successfully for appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
+        Write-Host "." -ForegroundColor DarkGray
+        Write-Log -Message "Hardware inventory retrieved successfully for appliance $FQDN." -Level "OK" -NoConsoleOutput
+    }
+    else {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to retrieve hardware inventory for appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$FQDN" -NoNewline -ForegroundColor Red
+        Write-Host "." -ForegroundColor DarkGray
+        Write-Log -Message "Failed to retrieve hardware inventory for appliance $FQDN." -Level "Error" -NoConsoleOutput
+        continue
+    }
+    # Export the hardware inventory to a CSV file
+    $csvFileName = "$FQDN-HardwareInventory.csv"
+    $csvFilePath = Join-Path -Path $csvDir -ChildPath $csvFileName
+    $hardwareInventory | Export-Csv -Path $csvFilePath -NoTypeInformation
+    # Check if the CSV file was exported successfully
+    if (Test-Path -Path $csvFilePath) {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Hardware inventory exported to CSV file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$csvFilePath" -NoNewline -ForegroundColor Cyan
+        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Log -Message "Hardware inventory exported to CSV file $csvFilePath successfully." -Level "OK" -NoConsoleOutput
+    }
+    else {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to export hardware inventory to CSV file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$csvFilePath" -NoNewline -ForegroundColor Red
+        Write-Host "." -ForegroundColor DarkGray
+        Write-Log -Message "Failed to export hardware inventory to CSV file $csvFilePath." -Level "Error" -NoConsoleOutput
+    }
+    # Export the hardware inventory to an Excel file
+    $excelFileName = "$FQDN-HardwareInventory.xlsx"
+    $excelFilePath = Join-Path -Path $excelDir -ChildPath $excelFileName
+    $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
+    # Check if the Excel file was exported successfully
+    if (Test-Path -Path $excelFilePath) {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Hardware inventory exported to Excel file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$excelFilePath" -NoNewline -ForegroundColor Cyan
+        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Log -Message "Hardware inventory exported to Excel file $excelFilePath successfully." -Level "OK" -NoConsoleOutput
+    }
+    else {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to export hardware inventory to Excel file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$excelFilePath" -NoNewline -ForegroundColor Red
+        Write-Host "." -ForegroundColor DarkGray
+        Write-Log -Message "Failed to export hardware inventory to Excel file $excelFilePath." -Level "Error" -NoConsoleOutput
+    }
     # Disconnect from the appliance
-    Disconnect-OVMgmt -Hostname $fqdn
-    Write-Host "`t5- Successfully disconnected from:" -NoNewline -ForegroundColor DarkGray
-    Write-Host " $fqdn`n" -ForegroundColor Green
-    Write-Log -Message "Successfully disconnected from $fqdn" -Level "OK" -NoConsoleOutput
-}
-# increment $script:taskNumber after the function call
-$script:taskNumber++
-# Task 6: Exporting user details to CSV and Excel files
-Write-Host "`n$Spaces$($taskNumber). Exporting user details to CSV and Excel files:`n" -ForegroundColor Magenta
-# Export the local users to an Excel file with timestamp
-$localUsersExcelPath = Join-Path -Path $excelDir -ChildPath "LocalUsers_$((Get-Date).ToString('yyyyMMdd-HHmmss')).xlsx"
-$allLocalUsers | Export-Excel -Path $localUsersExcelPath
-# Export the LDAP groups to an Excel file with timestamp
-$ldapGroupsExcelPath = Join-Path -Path $excelDir -ChildPath "LdapGroups_$((Get-Date).ToString('yyyyMMdd-HHmmss')).xlsx"
-$allLdapGroups | Export-Excel -Path $ldapGroupsExcelPath
-# Export the combined users to an Excel file with timestamp
-$combinedUsersExcelPath = Join-Path -Path $excelDir -ChildPath "CombinedUsers_$((Get-Date).ToString('yyyyMMdd-HHmmss')).xlsx"
-# Assign the local users and LDAP groups to variables
-$allLocalUsersCsv = $allLocalUsers
-$allLdapGroupsCsv = $allLdapGroups
-# Export the local users to a CSV file, creating a new file named LocalUsers+Time.csv in the CSV Directory
-$localUsersCsvPath = Join-Path -Path $csvDir -ChildPath "LocalUsers_$((Get-Date).ToString('yyyyMMdd-HHmmss')).csv"
-$allLocalUsersCsv | Export-Csv -Path $localUsersCsvPath -NoTypeInformation
-# Export the LDAP groups to a CSV file, creating a new file named LdapGroups+Time.csv in the CSV Directory
-$ldapGroupsCsvPath = Join-Path -Path $csvDir -ChildPath "LdapGroups_$((Get-Date).ToString('yyyyMMdd-HHmmss')).csv"
-$allLdapGroupsCsv | Export-Csv -Path $ldapGroupsCsvPath -NoTypeInformation
-# Select specific properties from local users and add LDAP group-specific properties with default values
-$selectedLocalUsers = $allLocalUsersCsv | Select-Object ApplianceConnection, type, category, userName, fullName, 'Type of user', @{Name = 'loginDomain'; Expression = { 'Local' } }, @{Name = 'egroup'; Expression = { 'N/A' } }, @{Name = 'directoryType'; Expression = { 'User' } }, uri
-# Select specific properties from LDAP groups and add local user-specific properties with default values
-$selectedLdapGroups = $allLdapGroupsCsv | Select-Object ApplianceConnection, type, category, @{Name = 'userName'; Expression = { 'N/A' } }, @{Name = 'fullName'; Expression = { 'N/A' } }, 'Type of user', loginDomain, egroup, directoryType, uri
-# Combine all local users and LDAP groups into a single array
-$combinedUsers = $selectedLocalUsers + $selectedLdapGroups
-# Define Close-ExcelFile function to close the Excel file if it is open, if not open says it at console
-function Close-ExcelFile {
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$ExcelFilePath
-    )
-    try {
-        # Try to open the file in ReadWrite mode
-        $fileStream = [System.IO.File]::Open($ExcelFilePath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
-        if ($fileStream) {
-            $fileStream.Close()
-            Write-Host "`t• " -NoNewline -ForegroundColor White
-            Write-Host "The Excel file was already closed.`n" -ForegroundColor Yellow
-            Write-Log -Message "The Excel file was already closed." -Level "Info" -NoConsoleOutput
-        }
+    Disconnect-OVMgmt -FQDN $FQDN
+    # Check if the disconnection was successful
+    if ($?) {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Disconnected from appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
+        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Log -Message "Disconnected from appliance $FQDN successfully." -Level "OK" -NoConsoleOutput
     }
-    catch {
-        # If an exception is thrown, the file is open
-        $excelFile = Get-Process | Where-Object { $_.MainWindowTitle -like "*Excel*" }
-        if ($excelFile) {
-            # Close the Excel file
-            $excelFile | Stop-Process -Force
-            Write-Host "`t• " -NoNewline -ForegroundColor White
-            Write-Host "The Excel file was open and has been closed.`n" -ForegroundColor Green
-            Write-Log -Message "The Excel file was open and has been closed." -Level "OK" -NoConsoleOutput
-        }
+    else {
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to disconnect from appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$FQDN" -NoNewline -ForegroundColor Red
+        Write-Host "." -ForegroundColor DarkGray
+        Write-Log -Message "Failed to disconnect from appliance $FQDN." -Level "Error" -NoConsoleOutput
     }
 }
-# Close the Excel file if it is open
-Close-ExcelFile -ExcelFilePath $combinedUsersExcelPath
-# Add a delay to ensure the Excel file is closed before exporting the data
-Start-Sleep -Seconds 5
-# Sort the combined users by ApplianceConnection and then by userName
-$sortedCombinedUsers = $combinedUsers | Sort-Object ApplianceConnection, type
-# Export the data to Excel
-$excel = $sortedCombinedUsers | Export-Excel -Path $combinedUsersExcelPath `
-    -ClearSheet `
-    -AutoSize `
-    -AutoFilter `
-    -FreezeTopRow `
-    -WorksheetName "CombinedUsers" `
-    -TableStyle "Dark11" `
-    -PassThru
-# Check if the Excel file was created successfully
-if ($excel) {
-    Write-Host "`t• " -NoNewline -ForegroundColor White
-    Write-Host "The Excel file was created successfully.`n" -ForegroundColor Green
-    Write-Log -Message "The Excel file was created successfully." -Level "OK" -NoConsoleOutput
-}
-else {
-    Write-Host "`t• " -NoNewline -ForegroundColor White
-    Write-Host "Failed to create the Excel file.`n" -ForegroundColor Red
-    Write-Log -Message "Failed to create the Excel file." -Level "Error" -NoConsoleOutput
-}
-# Save and close the Excel package
-$excel.Save()
-$excel.Dispose()
-# Increment $script:taskNumber after the function call
-$script:taskNumber++
-# Task 7: Script execution completed successfully
-# write a message to the console indicating a summary of the script execution
-Write-Host "`n$Spaces$($taskNumber). Summary of script execution.`n" -ForegroundColor Magenta
 # Just before calling Complete-Logging
 $endTime = Get-Date
 $totalRuntime = $endTime - $startTime
