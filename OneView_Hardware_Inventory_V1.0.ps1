@@ -353,7 +353,7 @@ foreach ($appliance in $Appliances) {
     if (Test-Path -Path $excelFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Hardware inventory exported to Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "successfully" -ForegroundColor Green
+        Write-Host "successfully" -NoNewline -ForegroundColor Green
         Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Hardware inventory exported to Excel file $excelFilePath successfully." -Level "OK" -NoConsoleOutput
     }
