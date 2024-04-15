@@ -296,7 +296,8 @@ foreach ($appliance in $Appliances) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Connected to appliance " -NoNewline -ForegroundColor DarkGray
         Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
-        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Host "successfully" -ForegroundColor Green
+        Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Connected to appliance $FQDN successfully." -Level "OK" -NoConsoleOutput
     }
     else {
@@ -312,7 +313,9 @@ foreach ($appliance in $Appliances) {
     # Check if the hardware inventory was retrieved successfully
     if ($hardwareInventory) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Hardware inventory retrieved successfully for appliance " -NoNewline -ForegroundColor DarkGray
+        Write-Host "Hardware inventory retrieved" -NoNewline -ForegroundColor DarkGray
+        Write-Host " successfully" -ForegroundColor Green
+        Write-Host " for appliance " -NoNewline -ForegroundColor DarkGray
         Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
         Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Hardware inventory retrieved successfully for appliance $FQDN." -Level "OK" -NoConsoleOutput
