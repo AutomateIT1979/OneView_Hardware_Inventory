@@ -49,6 +49,7 @@ else {
 }
 # Initialize task counter
 $script:taskNumber = 1
+
 # Define the function to import required modules if they are not already imported
 function Import-ModulesIfNotExists {
     param (
@@ -115,8 +116,10 @@ function Import-ModulesIfNotExists {
         Start-Sleep -Seconds 1
     }
 }
+
 # Import the required modules
 Import-ModulesIfNotExists -ModuleNames 'HPEOneView.660', 'Microsoft.PowerShell.Security', 'Microsoft.PowerShell.Utility', 'ImportExcel'
+
 # Define the CSV file name
 $csvFileName = ".\Appliances_List\Appliances_List.csv"
 # Define the parent directory of the CSV file
@@ -260,6 +263,7 @@ $script:taskNumber++
 Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput
+    
 # Loop through each appliance
 foreach ($appliance in $Appliances) {
     # Convert the FQDN to Upper Case
@@ -286,7 +290,7 @@ foreach ($appliance in $Appliances) {
         Write-Log -Message "No existing sessions found." -Level "Info" -NoConsoleOutput
     }
     # Use the Connect-OVMgmt cmdlet to connect to the appliance
-    Connect-OVMgmt -FQDN $FQDN -Credential $credential *> $null
+    Connect-OVMgmt -Hostname $FQDN -Credential $credential *> $null
     # Check if the connection was successful
     if ($?) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
@@ -355,12 +359,14 @@ foreach ($appliance in $Appliances) {
     else {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Failed to export hardware inventory to Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$excelFilePath" -NoNewline -ForegroundColor Red
-        Write-Host "." -ForegroundColor DarkGray
+        Write-Host "$excelFilePath" -
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to export hardware inventory to Excel file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$excelFilePath" -ForegroundColor Red
         Write-Log -Message "Failed to export hardware inventory to Excel file $excelFilePath." -Level "Error" -NoConsoleOutput
     }
     # Disconnect from the appliance
-    Disconnect-OVMgmt -FQDN $FQDN
+    Disconnect-OVMgmt -Hostname $FQDN
     # Check if the disconnection was successful
     if ($?) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
