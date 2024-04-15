@@ -333,14 +333,12 @@ foreach ($appliance in $Appliances) {
     if (Test-Path -Path $csvFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Hardware inventory exported to CSV file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$csvFilePath" -NoNewline -ForegroundColor Cyan
-        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Host " successfully." -ForegroundColor Green
         Write-Log -Message "Hardware inventory exported to CSV file $csvFilePath successfully." -Level "OK" -NoConsoleOutput
     }
     else {
         Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Failed to export hardware inventory to CSV file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$csvFilePath" -NoNewline -ForegroundColor Red
+        Write-Host "Failed to export hardware inventory to CSV file " -NoNewline -ForegroundColor Red
         Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Failed to export hardware inventory to CSV file $csvFilePath." -Level "Error" -NoConsoleOutput
     }
@@ -352,17 +350,13 @@ foreach ($appliance in $Appliances) {
     if (Test-Path -Path $excelFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Hardware inventory exported to Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$excelFilePath" -NoNewline -ForegroundColor Cyan
-        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Host " successfully" -ForegroundColor Green
+        Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Hardware inventory exported to Excel file $excelFilePath successfully." -Level "OK" -NoConsoleOutput
     }
     else {
         Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Failed to export hardware inventory to Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$excelFilePath" -
-        Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Failed to export hardware inventory to Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$excelFilePath" -ForegroundColor Red
+        Write-Host "Failed to export hardware inventory to Excel file " -NoNewline -ForegroundColor Red
         Write-Log -Message "Failed to export hardware inventory to Excel file $excelFilePath." -Level "Error" -NoConsoleOutput
     }
     # Disconnect from the appliance
@@ -372,7 +366,8 @@ foreach ($appliance in $Appliances) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Disconnected from appliance " -NoNewline -ForegroundColor DarkGray
         Write-Host "$FQDN" -NoNewline -ForegroundColor Cyan
-        Write-Host " successfully." -ForegroundColor DarkGray
+        Write-Host " successfully" -ForegroundColor Green
+        Write-Host "." -ForegroundColor DarkGray
         Write-Log -Message "Disconnected from appliance $FQDN successfully." -Level "OK" -NoConsoleOutput
     }
     else {
