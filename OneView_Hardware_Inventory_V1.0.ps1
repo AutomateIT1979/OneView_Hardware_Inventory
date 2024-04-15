@@ -208,6 +208,77 @@ else {
 # Define the directories for the CSV and Excel files
 $csvDir = Join-Path -Path $script:ReportsDir -ChildPath 'CSV'
 $excelDir = Join-Path -Path $script:ReportsDir -ChildPath 'Excel'
+# Check if Excel is installed on the system and if it is not, log an error message and exit the script
+function Test-ExcelInstallation {
+    # Attempt to create an Excel COM object
+    $excel = $null
+    try {
+        $excel = New-Object -ComObject Excel.Application
+        # Write a message to the console
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel is installed." -ForegroundColor Green
+        # Write a message to the log file
+        Write-Log -Message "Excel is installed." -Level "OK" -NoConsoleOutput
+    }
+    catch {
+        # Write a message to the console
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel is not installed." -ForegroundColor Red
+        # Write a message to the log file
+        Write-Log -Message "Excel is not installed." -Level "Error" -NoConsoleOutput
+        return $false
+    }
+    finally {
+        if ($null -ne $excel) {
+            # Quit Excel
+            $excel.Quit()
+            # Release the COM object
+            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
+            Remove-Variable -Name excel
+        }
+    }
+    return $true
+}
+# Check if the Excel file is open, if yes, save and close it
+function Test-ExcelFileOperation {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ExcelFilePath
+    )
+    # Attempt to open the Excel file
+    $excel = New-Object -ComObject Excel.Application
+    try {
+        # Open the Excel file
+        $workbook = $excel.Workbooks.Open($ExcelFilePath)
+        # Save and close the Excel file
+        $workbook.Save()
+        $workbook.Close()
+        # Write a message to the console
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$ExcelFilePath" -NoNewline -ForegroundColor Cyan
+        Write-Host " was open, has been saved and closed." -ForegroundColor Green
+        # Write a message to the log file
+        Write-Log -Message "Excel file $ExcelFilePath was open, has been saved and closed." -Level "OK" -NoConsoleOutput
+    }
+    catch {
+        # Write a message to the console
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Failed to open Excel file " -NoNewline -ForegroundColor DarkGray
+        Write-Host "$ExcelFilePath" -NoNewline -ForegroundColor Red
+        Write-Host "." -ForegroundColor DarkGray
+        # Write a message to the log file
+        Write-Log -Message "Failed to open Excel file $ExcelFilePath." -Level "Error" -NoConsoleOutput
+    }
+    finally {
+        # Quit Excel
+        $excel.Quit()
+        # Release the COM object
+        [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
+        Remove-Variable -Name excel
+    }
+}
 # Check if the CSV directory exists
 if (Test-Path -Path $csvDir) {
     # Write a message to the console
@@ -348,7 +419,16 @@ foreach ($appliance in $Appliances) {
     # Export the hardware inventory to an Excel file
     $excelFileName = "$FQDN-HardwareInventory.xlsx"
     $excelFilePath = Join-Path -Path $excelDir -ChildPath $excelFileName
-    $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
+    # Call the Test-ExcelInstallation function
+    $excelInstalled = Test-ExcelInstallation
+
+    if ($excelInstalled) {
+        # Call the Test-ExcelFileOperation function
+        Test-ExcelFileOperation -ExcelFilePath $excelFilePath
+
+        # Now you can safely export the hardware inventory to the Excel file
+        $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
+    }
     # Check if the Excel file was exported successfully
     if (Test-Path -Path $excelFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
