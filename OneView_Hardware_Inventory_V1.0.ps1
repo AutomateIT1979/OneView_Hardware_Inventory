@@ -334,7 +334,12 @@ $script:taskNumber++
 Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput
-    
+# Check if Excel is installed at the beginning of the script
+$excelInstalled = Test-ExcelInstallation
+if (-not $excelInstalled) {
+    Write-Host "Excel is not installed. Please install Excel and then run the script again." -ForegroundColor Red
+    return
+}    
 # Loop through each appliance
 foreach ($appliance in $Appliances) {
     # Convert the FQDN to Upper Case
@@ -419,16 +424,10 @@ foreach ($appliance in $Appliances) {
     # Export the hardware inventory to an Excel file
     $excelFileName = "$FQDN-HardwareInventory.xlsx"
     $excelFilePath = Join-Path -Path $excelDir -ChildPath $excelFileName
-    # Call the Test-ExcelInstallation function
-    $excelInstalled = Test-ExcelInstallation
-
-    if ($excelInstalled) {
-        # Call the Test-ExcelFileOperation function
-        Test-ExcelFileOperation -ExcelFilePath $excelFilePath
-
-        # Now you can safely export the hardware inventory to the Excel file
-        $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
-    }
+    # Call the Test-ExcelFileOperation function
+    Test-ExcelFileOperation -ExcelFilePath $excelFilePath
+    # Now you can safely export the hardware inventory to the Excel file
+    $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
     # Check if the Excel file was exported successfully
     if (Test-Path -Path $excelFilePath) {
         Write-Host "`t• " -NoNewline -ForegroundColor White
