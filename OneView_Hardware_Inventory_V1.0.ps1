@@ -262,56 +262,17 @@ else {
 $csvDir = Join-Path -Path $script:ReportsDir -ChildPath 'CSV'
 $excelDir = Join-Path -Path $script:ReportsDir -ChildPath 'Excel'
 # Check if the Excel file is open, if yes, save and close it
-function Test-ExcelFileOperation {
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$ExcelFilePath
-    )
-    # Attempt to open the Excel file
-    $excel = New-Object -ComObject Excel.Application
-    try {
-        # Check if the Excel file is already open
-        $wasOpen = $false
-        $workbook = $null
-        try {
-            $workbook = $excel.Workbooks._Open($ExcelFilePath)
-        } catch {
-            $workbook = $excel.Workbooks | Where-Object { $_.FullName -eq $ExcelFilePath }
-            $wasOpen = $true
-        }
-        # Save and close the Excel file
-        $workbook.Save()
-        $workbook.Close()
-        # Write a message to the console
-        Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$ExcelFilePath" -NoNewline -ForegroundColor Cyan
-        if ($wasOpen) {
-            Write-Host " was open, has been saved and closed." -ForegroundColor Green
-            # Write a message to the log file
-            Write-Log -Message "Excel file $ExcelFilePath was open, has been saved and closed." -Level "OK" -NoConsoleOutput
-        } else {
-            Write-Host " was not open, has been saved and closed." -ForegroundColor Green
-            # Write a message to the log file
-            Write-Log -Message "Excel file $ExcelFilePath was not open, has been saved and closed." -Level "OK" -NoConsoleOutput
-        }
-    }
-    catch {
-        # Write a message to the console
-        Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Failed to open Excel file " -NoNewline -ForegroundColor DarkGray
-        Write-Host "$ExcelFilePath" -NoNewline -ForegroundColor Red
-        Write-Host "." -ForegroundColor DarkGray
-        # Write a message to the log file
-        Write-Log -Message "Failed to open Excel file $ExcelFilePath." -Level "Error" -NoConsoleOutput
-    }
-    finally {
-        # Quit Excel
-        $excel.Quit()
-        # Release the COM object
-        [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
-        Remove-Variable -Name excel
+function Test-ExcelProcess {
+    # Check if any Excel process is running
+    $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+
+    if ($null -ne $excelProcess) {
+        # Excel is running
+        Write-Host "Excel is currently running. Please close Excel before running this script." -ForegroundColor Red
+        exit
+    } else {
+        # Excel is not running
+        Write-Host "Excel is not running. You can proceed with the script." -ForegroundColor Green
     }
 }
 # increment $script:taskNumber after the function call
@@ -456,8 +417,8 @@ foreach ($appliance in $Appliances) {
     # Export the hardware inventory to an Excel file
     $excelFileName = "$FQDN-HardwareInventory.xlsx"
     $excelFilePath = Join-Path -Path $excelDir -ChildPath $excelFileName
-    # Call the Test-ExcelFileOperation function
-    Test-ExcelFileOperation -ExcelFilePath $excelFilePath
+    # Call the Check-ExcelProcess function
+    Test-ExcelProcess -ExcelFilePath $excelFilePath
     # Now you can safely export the hardware inventory to the Excel file
     $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
     # Check if the Excel file was exported successfully
