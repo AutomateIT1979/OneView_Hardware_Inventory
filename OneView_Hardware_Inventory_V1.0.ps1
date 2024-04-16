@@ -119,12 +119,12 @@ function Import-ModulesIfNotExists {
 
 # Import the required modules
 Import-ModulesIfNotExists -ModuleNames 'HPEOneView.660', 'Microsoft.PowerShell.Security', 'Microsoft.PowerShell.Utility', 'ImportExcel'
-# Increment $script:taskNumber after the function call
-$script:taskNumber++
 # Task 2: Checking if Excel is insalled on system
 Write-Host "`n$Spaces$($taskNumber). Checking if Excel is installed:`n" -ForegroundColor Magenta
 # Log Task
 Write-Log -Message "Checking if Excel is installed." -Level "Info" -NoConsoleOutput
+# Increment $script:taskNumber after the function call
+$script:taskNumber++
 function Test-ExcelInstallation {
     # Attempt to create an Excel COM object
     $excel = $null
