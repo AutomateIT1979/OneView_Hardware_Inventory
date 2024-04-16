@@ -132,9 +132,22 @@ function Test-ExcelInstallation {
         $excel = New-Object -ComObject Excel.Application
         # Write a message to the console
         Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Excel is installed.`n" -ForegroundColor Green
+        Write-Host "Excel is installed." -ForegroundColor Green
         # Write a message to the log file
         Write-Log -Message "Excel is installed." -Level "OK" -NoConsoleOutput
+
+        # Retrieve and display additional information about the Excel installation
+        $version = $excel.Version
+        $build = $excel.Build
+
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel version: $version" -ForegroundColor Green
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel build: $build" -ForegroundColor Green
+
+        # Write to the log file
+        Write-Log -Message "Excel version: $version" -Level "Info" -NoConsoleOutput
+        Write-Log -Message "Excel build: $build" -Level "Info" -NoConsoleOutput
     }
     catch {
         # Write a message to the console
@@ -155,13 +168,7 @@ function Test-ExcelInstallation {
     }
     return $true
 }
-# Check if Excel is installed at the beginning of the script
-$excelInstalled = Test-ExcelInstallation
-if (-not $excelInstalled) {
-    Write-Host "Excel is not installed. Please install Excel and then run the script again." -ForegroundColor Red
-    Write-LOg -Message "Excel is not installed. Please install Excel and then run the script again." -Level "Error" -NoConsoleOutput 
-    return
-} 
+
 # Define the CSV file name
 $csvFileName = ".\Appliances_List\Appliances_List.csv"
 # Define the parent directory of the CSV file
@@ -184,7 +191,9 @@ if ($Appliances) {
     Write-Log -Message "There are $totalAppliances appliances in the CSV file." -Level "Info" -NoConsoleOutput
     # Display if the CSV file was imported successfully
     Write-Host "`t• " -NoNewline -ForegroundColor White
-    Write-Host "The CSV file was imported successfully." -ForegroundColor Green
+    Write-Host "The CSV file was imported" -NoNewline -ForegroundColor DarkGray
+    Write-Host " successfully" -NoNewline -ForegroundColor Green
+    Write-Host "." -ForegroundColor DarkGray
     # Display the total number of appliances
     Write-Host "`t• " -NoNewline -ForegroundColor White
     Write-Host "Total number of appliances:" -NoNewline -ForegroundColor DarkGray
