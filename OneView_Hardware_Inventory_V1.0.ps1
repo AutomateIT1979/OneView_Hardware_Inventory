@@ -269,7 +269,6 @@ Write-Host "`n$Spaces$($taskNumber). Checking if Excel is running and closing it
 Write-Log -Message "Checking if Excel is running and closing it if necessary." -Level "Info" -NoConsoleOutput
 # Increment $script:taskNumber for Task 5
 $script:taskNumber++
-# Define the function to check if Excel is running and close it if necessary
 function Test-ExcelProcess {
     # Check if any Excel process is running
     $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
@@ -287,12 +286,14 @@ function Test-ExcelProcess {
             # Excel is still running
             Write-Host "`t• " -NoNewline -ForegroundColor White
             Write-Host "Unable to close Excel. Please close it manually and then run the script again." -ForegroundColor Red
-        } else {
+        }
+        else {
             # Excel has been closed
             Write-Host "`t• " -NoNewline -ForegroundColor White
             Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
         }
-    } else {
+    }
+    else {
         # Excel is not running
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel is not running. You can proceed with the script." -ForegroundColor Green
