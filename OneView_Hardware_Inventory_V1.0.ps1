@@ -121,7 +121,7 @@ Import-ModulesIfNotExists -ModuleNames 'HPEOneView.660', 'Microsoft.PowerShell.S
 Write-Host "`n$Spaces$($taskNumber). Checking if Excel is installed:`n" -ForegroundColor Magenta
 # Log Task
 Write-Log -Message "Checking if Excel is installed." -Level "Info" -NoConsoleOutput
-# Increment $script:taskNumber after the function call
+# Increment $script:taskNumber for Task 2
 $script:taskNumber++
 function Test-ExcelInstallation {
     # Attempt to create an Excel COM object
@@ -182,7 +182,7 @@ $credentialFolder = Join-Path -Path $parentDirectory -ChildPath "Credential"
 Write-Host "`n$Spaces$($taskNumber). Importing Appliances list from the CSV file:`n" -ForegroundColor Magenta
 # Import Appliances list from CSV file
 $Appliances = Import-Csv -Path $csvFilePath
-# Increment $script:taskNumber after the function call
+# Increment $script:taskNumber for Task 3
 $script:taskNumber++
 # Confirm that the CSV file was imported successfully
 if ($Appliances) {
@@ -214,6 +214,8 @@ else {
 Write-Host "`n$Spaces$($taskNumber). Checking for credential folder:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Checking for credential folder." -Level "Info" -NoConsoleOutput
+# Increment $script:taskNumber for Task 4
+$script:taskNumber++
 # Check if the credential folder exists, if not say it at console and create it, if already exist say it at console
 if (Test-Path -Path $credentialFolder) {
     # Write a message to the console
@@ -265,35 +267,31 @@ $excelDir = Join-Path -Path $script:ReportsDir -ChildPath 'Excel'
 Write-Host "`n$Spaces$($taskNumber). Checking if Excel is running and closing it if necessary:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Checking if Excel is running and closing it if necessary." -Level "Info" -NoConsoleOutput
+# Increment $script:taskNumber for Task 5
+$script:taskNumber++
 # Define the function to check if Excel is running and close it if necessary
 function Test-ExcelProcess {
-    # Write a message to the console
-    Write-Host "`t• " -NoNewline -ForegroundColor White
-    Write-Host "Checking if Excel is running..." -ForegroundColor DarkGray
-    # Check if any Excel process is running
-    $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+    do {
+        # Check if any Excel process is running
+        $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+        if ($null -ne $excelProcess) {
+            # Excel is running
+            Write-Host "`t• " -NoNewline -ForegroundColor White
+            Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
+            # Close the Excel process
+            Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
+            # Wait for a few seconds to allow the process to close
+            Start-Sleep -Seconds 5
+        }
+    } while ($null -ne $excelProcess)
 
-    if ($null -ne $excelProcess) {
-        # Excel is running
-        Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
-        # Write a message to the log file
-        Write-Log -Message "Excel is currently running. Attempting to close Excel..." -Level "Warning" -NoConsoleOutput
-        # Close the Excel process
-        Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
-        # Write a message to the console
-        Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
-        # Write a message to the log file
-        Write-Log -Message "Excel has been closed." -Level "OK" -NoConsoleOutput
-    } else {
-        # Excel is not running
-        Write-Host "Excel is not running. You can proceed with the script." -ForegroundColor Green
-        # Write a message to the log file
-        Write-Log -Message "Excel is not running." -Level "OK" -NoConsoleOutput
-    }
+    # Excel has been closed
+    Write-Host "`t• " -NoNewline -ForegroundColor White
+    Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
 }
 # Check if Excel is running
 Test-ExcelProcess
-# increment $script:taskNumber after the function call
+# increment $script:taskNumber for Task 6
 $script:taskNumber++
 # Task 6: Check if the CSV and Excel directories exist
 Write-Host "`n$Spaces$($taskNumber). Checking for CSV and Excel directories:`n" -ForegroundColor Magenta
@@ -345,7 +343,7 @@ else {
     # Write a message to the log file
     Write-Log -Message "Excel directory created at $excelDir" -Level "OK" -NoConsoleOutput
 }
-# increment $script:taskNumber after the function call
+# increment $script:taskNumber for Task 7
 $script:taskNumber++
 # Task 7: Loop through the appliances list and get hardware inventory
 Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
