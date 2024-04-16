@@ -272,32 +272,21 @@ $script:taskNumber++
 # Define the function to check if Excel is running and close it if necessary
 function Test-ExcelProcess {
     # Check if any Excel process is running
-    $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+    $excelProcess = Get-Process excel
     if ($null -ne $excelProcess) {
         # Excel is running
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
         # Close the Excel process
-        Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
+        Stop-Process -Name excel -Force
         # Wait for a few seconds to allow the process to close
         Start-Sleep -Seconds 5
         # Recheck if any Excel process is running
-        $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+        $excelProcess = Get-Process excel
         if ($null -ne $excelProcess) {
-            # Excel is still running, try to close it again
-            Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Seconds 5
-            # Check again
-            $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
-            if ($null -ne $excelProcess) {
-                # Excel is still running, something might be wrong
-                Write-Host "`t• " -NoNewline -ForegroundColor White
-                Write-Host "Unable to close Excel. Please check for any 'ghost' Excel processes in the Task Manager and close them." -ForegroundColor Red
-            } else {
-                # Excel has been closed
-                Write-Host "`t• " -NoNewline -ForegroundColor White
-                Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
-            }
+            # Excel is still running
+            Write-Host "`t• " -NoNewline -ForegroundColor White
+            Write-Host "Unable to close Excel. Please close it manually and then run the script again." -ForegroundColor Red
         } else {
             # Excel has been closed
             Write-Host "`t• " -NoNewline -ForegroundColor White
@@ -491,6 +480,12 @@ foreach ($appliance in $Appliances) {
         Write-Log -Message "Failed to disconnect from appliance $FQDN." -Level "Error" -NoConsoleOutput
     }
 }
+# Task 8: Script execution completed successfully 
+Write-Host "`n$Spaces$($taskNumber). Script execution completed successfully.`n" -ForegroundColor Magenta
+# Log the task
+Write-Log -Message "Script execution completed successfully." -Level "Info" -NoConsoleOutput
+# Increment $script:taskNumber for Task 8
+$script:taskNumber++
 # Just before calling Complete-Logging
 $endTime = Get-Date
 $totalRuntime = $endTime - $startTime
