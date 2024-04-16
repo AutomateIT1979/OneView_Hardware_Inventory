@@ -49,7 +49,6 @@ else {
 }
 # Initialize task counter
 $script:taskNumber = 1
-
 # Define the function to import required modules if they are not already imported
 function Import-ModulesIfNotExists {
     param (
@@ -116,7 +115,6 @@ function Import-ModulesIfNotExists {
         Start-Sleep -Seconds 1
     }
 }
-
 # Import the required modules
 Import-ModulesIfNotExists -ModuleNames 'HPEOneView.660', 'Microsoft.PowerShell.Security', 'Microsoft.PowerShell.Utility', 'ImportExcel'
 # Task 2: Checking if Excel is insalled on system
@@ -135,16 +133,13 @@ function Test-ExcelInstallation {
         Write-Host "Excel is installed." -ForegroundColor Green
         # Write a message to the log file
         Write-Log -Message "Excel is installed." -Level "OK" -NoConsoleOutput
-
         # Retrieve and display additional information about the Excel installation
         $version = $excel.Version
         $build = $excel.Build
-
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel version: $version" -ForegroundColor Green
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel build: $build" -ForegroundColor Green
-
         # Write to the log file
         Write-Log -Message "Excel version: $version" -Level "Info" -NoConsoleOutput
         Write-Log -Message "Excel build: $build" -Level "Info" -NoConsoleOutput
@@ -168,7 +163,6 @@ function Test-ExcelInstallation {
     }
     return $true
 }
-
 # Check if Excel is installed at the beginning of the script
 $excelInstalled = Test-ExcelInstallation
 if (-not $excelInstalled) {
@@ -276,8 +270,14 @@ function Test-ExcelFileOperation {
     # Attempt to open the Excel file
     $excel = New-Object -ComObject Excel.Application
     try {
-        # Open the Excel file
-        $workbook = $excel.Workbooks.Open($ExcelFilePath)
+        # Check if the Excel file is already open
+        $workbook = $excel.Workbooks | Where-Object { $_.FullName -eq $ExcelFilePath }
+        $wasOpen = $true
+        if ($null -eq $workbook) {
+            # Open the Excel file
+            $workbook = $excel.Workbooks.Open($ExcelFilePath)
+            $wasOpen = $false
+        }
         # Save and close the Excel file
         $workbook.Save()
         $workbook.Close()
@@ -285,9 +285,16 @@ function Test-ExcelFileOperation {
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel file " -NoNewline -ForegroundColor DarkGray
         Write-Host "$ExcelFilePath" -NoNewline -ForegroundColor Cyan
-        Write-Host " was open, has been saved and closed." -ForegroundColor Green
-        # Write a message to the log file
-        Write-Log -Message "Excel file $ExcelFilePath was open, has been saved and closed." -Level "OK" -NoConsoleOutput
+        if ($wasOpen) {
+            Write-Host " was open, has been saved and closed." -ForegroundColor Green
+            # Write a message to the log file
+            Write-Log -Message "Excel file $ExcelFilePath was open, has been saved and closed." -Level "OK" -NoConsoleOutput
+        }
+        else {
+            Write-Host " was not open, has been saved and closed." -ForegroundColor Green
+            # Write a message to the log file
+            Write-Log -Message "Excel file $ExcelFilePath was not open, has been saved and closed." -Level "OK" -NoConsoleOutput
+        }
     }
     catch {
         # Write a message to the console
