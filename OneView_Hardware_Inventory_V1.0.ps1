@@ -170,12 +170,12 @@ $parentDirectory = Split-Path -Path $scriptDirectory -Parent
 $csvFilePath = Join-Path -Path $parentDirectory -ChildPath $csvFileName
 # Define the path to the credential folder
 $credentialFolder = Join-Path -Path $parentDirectory -ChildPath "Credential"
-# Increment $script:taskNumber after the function call
-$script:taskNumber++
 # Task 3: import Appliances list from the CSV file.
 Write-Host "`n$Spaces$($taskNumber). Importing Appliances list from the CSV file:`n" -ForegroundColor Magenta
 # Import Appliances list from CSV file
 $Appliances = Import-Csv -Path $csvFilePath
+# Increment $script:taskNumber after the function call
+$script:taskNumber++
 # Confirm that the CSV file was imported successfully
 if ($Appliances) {
     # Get the total number of appliances
@@ -200,8 +200,6 @@ else {
     # Log the failure to import the CSV file
     Write-Log -Message "Failed to import the CSV file." -Level "Error" -NoConsoleOutput
 }
-# increment $script:taskNumber after the function call
-$script:taskNumber++
 # Task 4: Check if credential folder exists
 Write-Host "`n$Spaces$($taskNumber). Checking for credential folder:`n" -ForegroundColor Magenta
 # Log the task
