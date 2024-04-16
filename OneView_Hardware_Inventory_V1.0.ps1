@@ -144,7 +144,6 @@ function Test-ExcelInstallation {
         Write-Host "Excel version: $version" -ForegroundColor Green
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel build: $build" -ForegroundColor Green
-        Write-Host "`t• " -NoNewline -ForegroundColor White
 
         # Write to the log file
         Write-Log -Message "Excel version: $version" -Level "Info" -NoConsoleOutput
