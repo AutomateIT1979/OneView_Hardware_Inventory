@@ -240,12 +240,15 @@ else {
 }
 # Define the path to the credential file
 $credentialFile = Join-Path -Path $credentialFolder -ChildPath "credential.txt"
-# Task 5: Check credential Folder exists.
-Write-Host "`n$Spaces$($taskNumber). Checking for credential file:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Checking for credential file." -Level "Info" -NoConsoleOutput
 # Check if the credential file exists
 if (-not (Test-Path -Path $credentialFile)) {
+    # Write a message to the console
+    Write-Host "`t• " -NoNewline -ForegroundColor White
+    Write-Host "Credential file does not exist." -NoNewline -ForegroundColor Red
+    Write-Host " Creating now..." -ForegroundColor DarkGray
+    Write-Log -Message "Credential file does not exist, creating now..." -Level "Info" -NoConsoleOutput
     # Prompt the user to enter their login and password
     $credential = Get-Credential -Message "Please enter your login and password."
     # Save the credential to the credential file
