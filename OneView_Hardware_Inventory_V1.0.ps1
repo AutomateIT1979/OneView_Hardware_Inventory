@@ -119,7 +119,40 @@ function Import-ModulesIfNotExists {
 
 # Import the required modules
 Import-ModulesIfNotExists -ModuleNames 'HPEOneView.660', 'Microsoft.PowerShell.Security', 'Microsoft.PowerShell.Utility', 'ImportExcel'
-
+# Task 2: Checking if Excel is insalled on system
+Write-Host "`n$Spaces$($taskNumber). Checking if Excel is installed:`n" -ForegroundColor Magenta
+# Log Task
+Write-Log -Message "Checking if Excel is installed." -Level "Info" -NoConsoleOutput
+function Test-ExcelInstallation {
+    # Attempt to create an Excel COM object
+    $excel = $null
+    try {
+        $excel = New-Object -ComObject Excel.Application
+        # Write a message to the console
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel is installed.`n" -ForegroundColor Green
+        # Write a message to the log file
+        Write-Log -Message "Excel is installed." -Level "OK" -NoConsoleOutput
+    }
+    catch {
+        # Write a message to the console
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel is not installed." -ForegroundColor Red
+        # Write a message to the log file
+        Write-Log -Message "Excel is not installed." -Level "Error" -NoConsoleOutput
+        return $false
+    }
+    finally {
+        if ($null -ne $excel) {
+            # Quit Excel
+            $excel.Quit()
+            # Release the COM object
+            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
+            Remove-Variable -Name excel
+        }
+    }
+    return $true
+}
 # Define the CSV file name
 $csvFileName = ".\Appliances_List\Appliances_List.csv"
 # Define the parent directory of the CSV file
@@ -208,37 +241,6 @@ else {
 # Define the directories for the CSV and Excel files
 $csvDir = Join-Path -Path $script:ReportsDir -ChildPath 'CSV'
 $excelDir = Join-Path -Path $script:ReportsDir -ChildPath 'Excel'
-# Check if Excel is installed on the system and if it is not, log an error message and exit the script
-function Test-ExcelInstallation {
-    # Attempt to create an Excel COM object
-    $excel = $null
-    try {
-        $excel = New-Object -ComObject Excel.Application
-        # Write a message to the console
-        Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Excel is installed." -ForegroundColor Green
-        # Write a message to the log file
-        Write-Log -Message "Excel is installed." -Level "OK" -NoConsoleOutput
-    }
-    catch {
-        # Write a message to the console
-        Write-Host "`t• " -NoNewline -ForegroundColor White
-        Write-Host "Excel is not installed." -ForegroundColor Red
-        # Write a message to the log file
-        Write-Log -Message "Excel is not installed." -Level "Error" -NoConsoleOutput
-        return $false
-    }
-    finally {
-        if ($null -ne $excel) {
-            # Quit Excel
-            $excel.Quit()
-            # Release the COM object
-            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
-            Remove-Variable -Name excel
-        }
-    }
-    return $true
-}
 # Check if the Excel file is open, if yes, save and close it
 function Test-ExcelFileOperation {
     param (
