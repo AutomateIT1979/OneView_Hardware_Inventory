@@ -271,12 +271,13 @@ function Test-ExcelFileOperation {
     $excel = New-Object -ComObject Excel.Application
     try {
         # Check if the Excel file is already open
-        $workbook = $excel.Workbooks | Where-Object { $_.FullName -eq $ExcelFilePath }
-        $wasOpen = $true
-        if ($null -eq $workbook) {
-            # Open the Excel file
-            $workbook = $excel.Workbooks.Open($ExcelFilePath)
-            $wasOpen = $false
+        $wasOpen = $false
+        $workbook = $null
+        try {
+            $workbook = $excel.Workbooks._Open($ExcelFilePath)
+        } catch {
+            $workbook = $excel.Workbooks | Where-Object { $_.FullName -eq $ExcelFilePath }
+            $wasOpen = $true
         }
         # Save and close the Excel file
         $workbook.Save()
@@ -289,8 +290,7 @@ function Test-ExcelFileOperation {
             Write-Host " was open, has been saved and closed." -ForegroundColor Green
             # Write a message to the log file
             Write-Log -Message "Excel file $ExcelFilePath was open, has been saved and closed." -Level "OK" -NoConsoleOutput
-        }
-        else {
+        } else {
             Write-Host " was not open, has been saved and closed." -ForegroundColor Green
             # Write a message to the log file
             Write-Log -Message "Excel file $ExcelFilePath was not open, has been saved and closed." -Level "OK" -NoConsoleOutput
@@ -313,7 +313,10 @@ function Test-ExcelFileOperation {
         Remove-Variable -Name excel
     }
 }
-# Check if the CSV directory exists
+# increment $script:taskNumber after the function call
+$script:taskNumber++
+# Task 6: Check if the CSV and Excel directories exist
+Write-Host "`n$Spaces$($taskNumber). Checking for CSV and Excel directories:`n" -ForegroundColor Magenta
 if (Test-Path -Path $csvDir) {
     # Write a message to the console
     Write-Host "`t• " -NoNewline -ForegroundColor White
@@ -364,7 +367,7 @@ else {
 }
 # increment $script:taskNumber after the function call
 $script:taskNumber++
-# Task 6: Loop through the appliances list and get hardware inventory
+# Task 7: Loop through the appliances list and get hardware inventory
 Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput   
