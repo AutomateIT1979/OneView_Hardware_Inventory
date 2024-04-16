@@ -271,30 +271,53 @@ Write-Log -Message "Checking if Excel is running and closing it if necessary." -
 $script:taskNumber++
 # Define the function to check if Excel is running and close it if necessary
 function Test-ExcelProcess {
-    do {
-        # Check if any Excel process is running
+    # Check if any Excel process is running
+    $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+    if ($null -ne $excelProcess) {
+        # Excel is running
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
+        # Close the Excel process
+        Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
+        # Wait for a few seconds to allow the process to close
+        Start-Sleep -Seconds 5
+        # Recheck if any Excel process is running
         $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
         if ($null -ne $excelProcess) {
-            # Excel is running
-            Write-Host "`t• " -NoNewline -ForegroundColor White
-            Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
-            # Close the Excel process
+            # Excel is still running, try to close it again
             Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
-            # Wait for a few seconds to allow the process to close
             Start-Sleep -Seconds 5
+            # Check again
+            $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
+            if ($null -ne $excelProcess) {
+                # Excel is still running, something might be wrong
+                Write-Host "`t• " -NoNewline -ForegroundColor White
+                Write-Host "Unable to close Excel. Please check for any 'ghost' Excel processes in the Task Manager and close them." -ForegroundColor Red
+            } else {
+                # Excel has been closed
+                Write-Host "`t• " -NoNewline -ForegroundColor White
+                Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
+            }
+        } else {
+            # Excel has been closed
+            Write-Host "`t• " -NoNewline -ForegroundColor White
+            Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
         }
-    } while ($null -ne $excelProcess)
-
-    # Excel has been closed
-    Write-Host "`t• " -NoNewline -ForegroundColor White
-    Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
+    } else {
+        # Excel is not running
+        Write-Host "`t• " -NoNewline -ForegroundColor White
+        Write-Host "Excel is not running. You can proceed with the script." -ForegroundColor Green
+    }
 }
 # Check if Excel is running
 Test-ExcelProcess
-# increment $script:taskNumber for Task 6
-$script:taskNumber++
 # Task 6: Check if the CSV and Excel directories exist
 Write-Host "`n$Spaces$($taskNumber). Checking for CSV and Excel directories:`n" -ForegroundColor Magenta
+# Log the task
+Write-Log -Message "Checking for CSV and Excel directories." -Level "Info" -NoConsoleOutput
+# Increment $script:taskNumber for Task 6
+$script:taskNumber++
+# Check if the CSV directory exists
 if (Test-Path -Path $csvDir) {
     # Write a message to the console
     Write-Host "`t• " -NoNewline -ForegroundColor White
@@ -343,13 +366,14 @@ else {
     # Write a message to the log file
     Write-Log -Message "Excel directory created at $excelDir" -Level "OK" -NoConsoleOutput
 }
-# increment $script:taskNumber for Task 7
+# Task 7: Loop through the appliances list and get hardware inventory
+# Increment $script:taskNumber for Task 7
 $script:taskNumber++
 # Task 7: Loop through the appliances list and get hardware inventory
 Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
 # Log the task
-Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput   
-# Loop through each appliance
+Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput
+# Loop through each appliance in the list
 foreach ($appliance in $Appliances) {
     # Convert the FQDN to Upper Case
     $FQDN = $appliance.FQDN.ToUpper()
