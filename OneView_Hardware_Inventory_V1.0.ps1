@@ -273,7 +273,7 @@ $script:taskNumber++
 function Test-ExcelProcess {
     # Check if any Excel process is running
     $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
-    if ($null -ne $excelProcess) {
+    if ($excelProcess.Count -gt 0) {
         # Excel is running
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
@@ -283,7 +283,7 @@ function Test-ExcelProcess {
         Start-Sleep -Seconds 5
         # Recheck if any Excel process is running
         $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
-        if ($null -ne $excelProcess) {
+        if ($excelProcess.Count -gt 0) {
             # Excel is still running
             Write-Host "`t• " -NoNewline -ForegroundColor White
             Write-Host "Unable to close Excel. Please close it manually and then run the script again." -ForegroundColor Red
