@@ -272,17 +272,17 @@ $script:taskNumber++
 # Define the function to check if Excel is running and close it if necessary
 function Test-ExcelProcess {
     # Check if any Excel process is running
-    $excelProcess = Get-Process excel
+    $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
     if ($null -ne $excelProcess) {
         # Excel is running
         Write-Host "`t• " -NoNewline -ForegroundColor White
         Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
         # Close the Excel process
-        Stop-Process -Name excel -Force
+        Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
         # Wait for a few seconds to allow the process to close
         Start-Sleep -Seconds 5
         # Recheck if any Excel process is running
-        $excelProcess = Get-Process excel
+        $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
         if ($null -ne $excelProcess) {
             # Excel is still running
             Write-Host "`t• " -NoNewline -ForegroundColor White
