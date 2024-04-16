@@ -119,6 +119,8 @@ function Import-ModulesIfNotExists {
 
 # Import the required modules
 Import-ModulesIfNotExists -ModuleNames 'HPEOneView.660', 'Microsoft.PowerShell.Security', 'Microsoft.PowerShell.Utility', 'ImportExcel'
+# Increment $script:taskNumber after the function call
+$script:taskNumber++
 # Task 2: Checking if Excel is insalled on system
 Write-Host "`n$Spaces$($taskNumber). Checking if Excel is installed:`n" -ForegroundColor Magenta
 # Log Task
@@ -168,6 +170,8 @@ $parentDirectory = Split-Path -Path $scriptDirectory -Parent
 $csvFilePath = Join-Path -Path $parentDirectory -ChildPath $csvFileName
 # Define the path to the credential folder
 $credentialFolder = Join-Path -Path $parentDirectory -ChildPath "Credential"
+# Increment $script:taskNumber after the function call
+$script:taskNumber++
 # Task 3: import Appliances list from the CSV file.
 Write-Host "`n$Spaces$($taskNumber). Importing Appliances list from the CSV file:`n" -ForegroundColor Magenta
 # Import Appliances list from CSV file
