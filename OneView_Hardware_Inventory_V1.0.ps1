@@ -242,8 +242,6 @@ else {
 $credentialFile = Join-Path -Path $credentialFolder -ChildPath "credential.txt"
 # Task 5: Check credential Folder exists.
 Write-Host "`n$Spaces$($taskNumber). Checking for credential file:`n" -ForegroundColor Magenta
-# increment $script:taskNumber after the function call
-$script:taskNumber++
 # Log the task
 Write-Log -Message "Checking for credential file." -Level "Info" -NoConsoleOutput
 # Check if the credential file exists
