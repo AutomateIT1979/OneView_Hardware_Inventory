@@ -261,20 +261,38 @@ else {
 # Define the directories for the CSV and Excel files
 $csvDir = Join-Path -Path $script:ReportsDir -ChildPath 'CSV'
 $excelDir = Join-Path -Path $script:ReportsDir -ChildPath 'Excel'
-# Check if the Excel file is open, if yes, save and close it
+# Task 5: Check if Excel is running and close it if necessary
+Write-Host "`n$Spaces$($taskNumber). Checking if Excel is running and closing it if necessary:`n" -ForegroundColor Magenta
+# Log the task
+Write-Log -Message "Checking if Excel is running and closing it if necessary." -Level "Info" -NoConsoleOutput
+# Define the function to check if Excel is running and close it if necessary
 function Test-ExcelProcess {
+    # Write a message to the console
+    Write-Host "`t• " -NoNewline -ForegroundColor White
+    Write-Host "Checking if Excel is running..." -ForegroundColor DarkGray
     # Check if any Excel process is running
     $excelProcess = Get-Process excel -ErrorAction SilentlyContinue
 
     if ($null -ne $excelProcess) {
         # Excel is running
-        Write-Host "Excel is currently running. Please close Excel before running this script." -ForegroundColor Red
-        exit
+        Write-Host "Excel is currently running. Attempting to close Excel..." -ForegroundColor Yellow
+        # Write a message to the log file
+        Write-Log -Message "Excel is currently running. Attempting to close Excel..." -Level "Warning" -NoConsoleOutput
+        # Close the Excel process
+        Stop-Process -Name excel -Force -ErrorAction SilentlyContinue
+        # Write a message to the console
+        Write-Host "Excel has been closed. You can proceed with the script." -ForegroundColor Green
+        # Write a message to the log file
+        Write-Log -Message "Excel has been closed." -Level "OK" -NoConsoleOutput
     } else {
         # Excel is not running
         Write-Host "Excel is not running. You can proceed with the script." -ForegroundColor Green
+        # Write a message to the log file
+        Write-Log -Message "Excel is not running." -Level "OK" -NoConsoleOutput
     }
 }
+# Check if Excel is running
+Test-ExcelProcess
 # increment $script:taskNumber after the function call
 $script:taskNumber++
 # Task 6: Check if the CSV and Excel directories exist
@@ -417,8 +435,6 @@ foreach ($appliance in $Appliances) {
     # Export the hardware inventory to an Excel file
     $excelFileName = "$FQDN-HardwareInventory.xlsx"
     $excelFilePath = Join-Path -Path $excelDir -ChildPath $excelFileName
-    # Call the Check-ExcelProcess function
-    Test-ExcelProcess -ExcelFilePath $excelFilePath
     # Now you can safely export the hardware inventory to the Excel file
     $hardwareInventory | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter -FreezeTopRow -BoldTopRow
     # Check if the Excel file was exported successfully
