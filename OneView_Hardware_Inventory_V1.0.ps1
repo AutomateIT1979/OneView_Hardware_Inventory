@@ -153,6 +153,13 @@ function Test-ExcelInstallation {
     }
     return $true
 }
+# Check if Excel is installed at the beginning of the script
+$excelInstalled = Test-ExcelInstallation
+if (-not $excelInstalled) {
+    Write-Host "Excel is not installed. Please install Excel and then run the script again." -ForegroundColor Red
+    Write-LOg -Message "Excel is not installed. Please install Excel and then run the script again." -Level "Error" -NoConsoleOutput 
+    return
+} 
 # Define the CSV file name
 $csvFileName = ".\Appliances_List\Appliances_List.csv"
 # Define the parent directory of the CSV file
@@ -161,7 +168,7 @@ $parentDirectory = Split-Path -Path $scriptDirectory -Parent
 $csvFilePath = Join-Path -Path $parentDirectory -ChildPath $csvFileName
 # Define the path to the credential folder
 $credentialFolder = Join-Path -Path $parentDirectory -ChildPath "Credential"
-# Task 2: import Appliances list from the CSV file.
+# Task 3: import Appliances list from the CSV file.
 Write-Host "`n$Spaces$($taskNumber). Importing Appliances list from the CSV file:`n" -ForegroundColor Magenta
 # Import Appliances list from CSV file
 $Appliances = Import-Csv -Path $csvFilePath
@@ -191,7 +198,7 @@ else {
 }
 # increment $script:taskNumber after the function call
 $script:taskNumber++
-# Task 3: Check if credential folder exists
+# Task 4: Check if credential folder exists
 Write-Host "`n$Spaces$($taskNumber). Checking for credential folder:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Checking for credential folder." -Level "Info" -NoConsoleOutput
@@ -223,7 +230,7 @@ else {
 $credentialFile = Join-Path -Path $credentialFolder -ChildPath "credential.txt"
 # increment $script:taskNumber after the function call
 $script:taskNumber++
-# Task 4: Check credential Folder exists.
+# Task 5: Check credential Folder exists.
 Write-Host "`n$Spaces$($taskNumber). Checking for credential file:`n" -ForegroundColor Magenta
 # Log the task
 Write-Log -Message "Checking for credential file." -Level "Info" -NoConsoleOutput
@@ -332,16 +339,10 @@ else {
 }
 # increment $script:taskNumber after the function call
 $script:taskNumber++
-# Task 5: Loop through the appliances list and get hardware inventory
+# Task 6: Loop through the appliances list and get hardware inventory
 Write-Host "`n$Spaces$($taskNumber). Loop through the appliances list and get hardware inventory:`n" -ForegroundColor Magenta
 # Log the task
-Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput
-# Check if Excel is installed at the beginning of the script
-$excelInstalled = Test-ExcelInstallation
-if (-not $excelInstalled) {
-    Write-Host "Excel is not installed. Please install Excel and then run the script again." -ForegroundColor Red
-    return
-}    
+Write-Log -Message "Loop through the appliances list and get hardware inventory." -Level "Info" -NoConsoleOutput   
 # Loop through each appliance
 foreach ($appliance in $Appliances) {
     # Convert the FQDN to Upper Case
