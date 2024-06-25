@@ -1,14 +1,30 @@
-PS D:\Script Sabri\OneView_Hardware_Inventory> .\Get_Server_Hardware_Inventory.ps1
-
-cmdlet Get_Server_Hardware_Inventory.ps1 at command pipeline position 1
-Supply values for the following parameters:
-Appliance: xbiz.local
-Begin: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:32
+Verified that the ServerHardware worksheet was created successfully.
+Exporting location details to worksheet.
+Write-Error: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:142
 Line |
-  32 |  Begin {
-     |  ~~~~~
-     | The term 'Begin' is not recognized as a name of a cmdlet, function, script file, or executable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-Getting all server hardware from appliance:
-Write-Error: Failed to retrieve server hardware from appliance: . Error: Cannot validate argument on parameter 'Hostname'. The argument is null or empty. Provide an argument that is not null or empty, and then try the command again.
-Write-Error: Failed to disconnect from appliance: . Error: Cannot validate argument on parameter 'ApplianceConnection'. The argument is null or empty. Provide an argument that is not null or empty, and then try the command again.
+ 142 |      Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Attempt 1: Failed to save workbook. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.160459.xlsx"
+Write-Error: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:142
+Line |
+ 142 |      Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Attempt 2: Failed to save workbook. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.160459.xlsx"
+Write-Error: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:142
+Line |
+ 142 |      Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Attempt 3: Failed to save workbook. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.160459.xlsx"
+Write-Error: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:142
+Line |
+ 142 |      Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Attempt 4: Failed to save workbook. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.160459.xlsx"
+Write-Error: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:142
+Line |
+ 142 |      Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Attempt 5: Failed to save workbook. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.160459.xlsx"
+Write-Error: Failed to retrieve server hardware from appliance: xbibop.local. Error: Failed to save workbook after 5 attempts.
+Disconnected from appliance: xbibop.local
 PS D:\Script Sabri\OneView_Hardware_Inventory>
