@@ -4,6 +4,24 @@ param (
     [string]$Appliance
 )
 
+function Save-Workbook {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [object]$Workbook
+    )
+
+    try {
+        $Workbook.SaveAs($Path)
+        Close-ExcelPackage $Workbook
+        Write-Host "Workbook saved successfully to $Path"
+    }
+    catch {
+        Write-Error "Failed to save workbook. Error: $_"
+    }
+}
+
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
@@ -57,7 +75,7 @@ Process {
         }
 
         # Set the output path to the same directory where the script is executed
-        $serverHardwareOutputXlsx = Join-Path -Path $PSScriptRoot -ChildPath "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
+        $serverHardwareOutputXlsx = Join-Path -Path $PSScriptRoot -ChildPath "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmmss').xlsx"
 
         # Export to Excel
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
@@ -128,9 +146,7 @@ Process {
         }
 
         # Save the workbook
-        $workbook.SaveAs($serverHardwareOutputXlsx)
-        Close-ExcelPackage $workbook
-        Write-Host "Server hardware and location details exported to $serverHardwareOutputXlsx"
+        Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
     }
     catch {
         Write-Error "Failed to retrieve server hardware from appliance: $($ovw.Name). Error: $_"
