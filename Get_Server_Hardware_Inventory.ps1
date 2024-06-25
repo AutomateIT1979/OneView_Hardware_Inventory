@@ -1,16 +1,14 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $true)]
-    [string]$Appliance,
-    [Parameter(Mandatory = $true)]
-    [string]$ApiToken
+    [string]$Appliance
 )
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
     # Initialize connection to OneView appliance
     try {
-        $ovw = Connect-OVMgmt -Appliance $Appliance -Token $ApiToken
+        $ovw = Connect-OVMgmt -Appliance $Appliance
         if ($null -eq $ovw) {
             throw "Failed to connect to OneView appliance."
         }
