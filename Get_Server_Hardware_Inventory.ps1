@@ -3,11 +3,9 @@ param (
     [Parameter(Mandatory = $true)]
     [string]$Appliance
 )
-
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
-
     # Initialize connection to OneView appliance
     try {
         $ovw = Connect-OVMgmt -Appliance $Appliance
@@ -25,23 +23,46 @@ Process {
     try {
         $serverHardware = Send-OVRequest -Uri "/rest/server-hardware" -Method GET -ApplianceConnection $ovw
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
-        $serverHardwareResults = $serverHardware.members | ForEach-Object {
-            [PSCustomObject]@{
+        $serverHardwareResults = @()
+        foreach ($server in $serverHardware.members) {
+            $serverInfo = [PSCustomObject]@{
                 ApplianceName      = $global:applianceName
-                ServerName         = $_.serverName
-                FormFactor         = $_.formFactor
-                Model              = $_.model
-                Generation         = $_.generation
-                MemoryGB           = [math]::round($_.memoryMB / 1024, 2)
-                OperatingSystem    = $_.operatingSystem
-                Position           = $_.position
-                ProcessorCoreCount = $_.processorCoreCount
-                ProcessorCount     = $_.processorCount
-                ProcessorSpeedMHz  = $_.processorSpeedMhz
-                ProcessorType      = $_.processorType
-                SerialNumber       = $_.serialNumber
-                LocationUri        = $_.locationUri
+                ServerName         = $server.serverName
+                FormFactor         = $server.formFactor
+                Model              = $server.model
+                Generation         = $server.generation
+                MemoryGB           = [math]::round($server.memoryMB / 1024, 2)
+                OperatingSystem    = $server.operatingSystem
+                Position           = $server.position
+                ProcessorCoreCount = $server.processorCoreCount
+                ProcessorCount     = $server.processorCount
+                ProcessorSpeedMHz  = $server.processorSpeedMhz
+                ProcessorType      = $server.processorType
+                SerialNumber       = $server.serialNumber
+                LocationUri        = $server.locationUri
             }
+            # Fetch additional details using LocationUri
+            if ($server.locationUri) {
+                try {
+                    $locationDetails = Send-OVRequest -Uri $server.locationUri -Method GET -ApplianceConnection $ovw
+                    # Update the serverInfo object with additional details
+                    $serverInfo | Add-Member -MemberType NoteProperty -Name "LocationSerialNumber" -Value $locationDetails.serialNumber
+                    if ($locationDetails.deviceBays) {
+                        $deviceBaysInfo = $locationDetails.deviceBays | ForEach-Object {
+                            [PSCustomObject]@{
+                                DevicePresence       = $_.devicePresence
+                                DeviceFormFactor     = $_.deviceFormFactor
+                                PowerAllocationWatts = $_.powerAllocationWatts
+                            }
+                        }
+                        $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value $deviceBaysInfo
+                    }
+                }
+                catch {
+                    Write-Error "Failed to retrieve location details for $($server.serverName). Error: $_"
+                }
+            }
+            $serverHardwareResults += $serverInfo
         }
         # Export to CSV
         $serverHardwareOutputCsv = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').csv"
