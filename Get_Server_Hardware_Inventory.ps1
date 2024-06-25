@@ -32,20 +32,20 @@ Process {
         $serverHardwareResults = @()
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
-                ApplianceName       = $global:applianceName
-                ServerName          = $server.serverName
-                FormFactor          = $server.formFactor
-                Model               = $server.model
-                Generation          = $server.generation
-                MemoryGB            = [math]::round($server.memoryMB / 1024, 2)
-                OperatingSystem     = $server.operatingSystem
-                Position            = $server.position
-                ProcessorCoreCount  = $server.processorCoreCount
-                ProcessorCount      = $server.processorCount
-                ProcessorSpeedMHz   = $server.processorSpeedMhz
-                ProcessorType       = $server.processorType
-                SerialNumber        = $server.serialNumber
-                LocationUri         = $server.locationUri
+                ApplianceName               = $global:applianceName
+                ServerName                  = $server.serverName
+                FormFactor                  = $server.formFactor
+                Model                       = $server.model
+                Generation                  = $server.generation
+                MemoryGB                    = [math]::round($server.memoryMB / 1024, 2)
+                OperatingSystem             = $server.operatingSystem
+                'Position[Server]'          = $server.position
+                'ProcessorCoreCount[Server]'= $server.processorCoreCount
+                'ProcessorCount[Server]'    = $server.processorCount
+                'ProcessorSpeedMHz[Server]' = $server.processorSpeedMhz
+                'ProcessorType[Server]'     = $server.processorType
+                'SerialNumber[Server]'      = $server.serialNumber
+                LocationUri                 = $server.locationUri
             }
             $serverHardwareResults += $serverInfo
         }
