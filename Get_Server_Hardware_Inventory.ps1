@@ -56,8 +56,10 @@ Process {
             $serverHardwareResults += $serverInfo
         }
 
+        # Set the output path to the same directory where the script is executed
+        $serverHardwareOutputXlsx = Join-Path -Path $PSScriptRoot -ChildPath "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
+
         # Export to Excel
-        $serverHardwareOutputXlsx = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
         Write-Host "Server hardware results exported to $serverHardwareOutputXlsx"
 
