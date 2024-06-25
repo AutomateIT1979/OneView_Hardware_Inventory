@@ -79,6 +79,7 @@ Process {
                                 throw "Failed to retrieve enclosure details."
                             }
                             $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
+                            Write-Host "Enclosure $($enclosureDetails.serialNumber) has $availableSlots available slots."
                             $enclosureInfo = [PSCustomObject]@{
                                 ApplianceName = $global:applianceName
                                 EnclosureSerialNumber = $enclosureDetails.serialNumber
@@ -105,6 +106,7 @@ Process {
         # Add enclosure slot availability to a new worksheet
         $enclosureWorksheetName = "EnclosureSlots"
         if ($enclosureSlots.Count -gt 0) {
+            Write-Host "Exporting enclosure slot information to worksheet."
             $enclosureSlots | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
         } else {
             Write-Host "No enclosure slot information to export."
