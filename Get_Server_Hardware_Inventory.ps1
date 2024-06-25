@@ -105,14 +105,17 @@ Process {
         $serverHardwareOutputXlsx = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
         $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
-        # Add LocationUri information to a new worksheet
-        $locationWorksheetName = "LocationUri"
+        # Add server hardware details to a new worksheet
+        $hardwareWorksheetName = "ServerHardwareDetails"
+        $serverHardwareResults | Export-Excel -ExcelPackage $workbook -WorkSheetname $hardwareWorksheetName -AutoSize -BoldTopRow
+        # Add location information to a new worksheet
+        $locationWorksheetName = "ServerLocationDetails"
         $locationUriList = $serverHardwareResults | Select-Object -Unique LocationUri
         if ($locationUriList.Count -gt 0) {
-            Write-Host "Exporting LocationUri information to worksheet."
+            Write-Host "Exporting Server Location information to worksheet."
             $locationUriList | Export-Excel -ExcelPackage $workbook -WorkSheetname $locationWorksheetName -AutoSize -BoldTopRow
         } else {
-            Write-Host "No LocationUri information to export."
+            Write-Host "No Server Location information to export."
         }
         # Add enclosure slot availability to a new worksheet
         $enclosureWorksheetName = "EnclosureSlots"
@@ -134,7 +137,7 @@ Process {
             $worksheet.Cells["A1"].EntireRow.Style.Font.Color.SetColor('Black')
         }
         Close-ExcelPackage $workbook
-        Write-Host "Server hardware, LocationUri, and enclosure slot results exported to $serverHardwareOutputXlsx"
+        Write-Host "Server hardware, Server Location, and enclosure slot results exported to $serverHardwareOutputXlsx"
     }
     catch {
         Write-Error "Failed to retrieve server hardware from appliance: $($ovw.Name). Error: $_"
