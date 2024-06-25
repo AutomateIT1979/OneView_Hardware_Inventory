@@ -20,7 +20,7 @@ function Save-Workbook {
             return
         }
         catch {
-            Write-Error "Attempt $(attempt): Failed to save workbook. Error: $_"
+            Write-Error "Attempt ${attempt}: Failed to save workbook. Error: $_"
             if ($attempt -eq $maxAttempts) {
                 throw "Failed to save workbook after $maxAttempts attempts."
             }
@@ -29,21 +29,19 @@ function Save-Workbook {
         }
     }
 }
-Begin {
-    # Load necessary modules
-    Import-Module ImportExcel
-    # Initialize connection to OneView appliance
-    try {
-        $ovw = Connect-OVMgmt -Appliance $Appliance
-        if ($null -eq $ovw) {
-            throw "Failed to connect to OneView appliance."
-        }
-        Write-Host "Connected to appliance: $($ovw.Name)"
+# Load necessary modules
+Import-Module ImportExcel
+# Initialize connection to OneView appliance
+try {
+    $ovw = Connect-OVMgmt -Appliance $Appliance
+    if ($null -eq $ovw) {
+        throw "Failed to connect to OneView appliance."
     }
-    catch {
-        Write-Error "OneView appliance connection failed: $_"
-        throw
-    }
+    Write-Host "Connected to appliance: $($ovw.Name)"
+}
+catch {
+    Write-Error "OneView appliance connection failed: $_"
+    throw
 }
 # Main script logic
 Write-Host "Getting all server hardware from appliance: $($ovw.Name)"
