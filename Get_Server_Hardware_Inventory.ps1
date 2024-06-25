@@ -49,18 +49,20 @@ Process {
                     $serverInfo | Add-Member -MemberType NoteProperty -Name "LocationSerialNumber" -Value $locationDetails.serialNumber
                     if ($locationDetails.deviceBays) {
                         $deviceBaysInfo = $locationDetails.deviceBays | ForEach-Object {
-                            [PSCustomObject]@{
-                                DevicePresence       = $_.devicePresence
-                                DeviceFormFactor     = $_.deviceFormFactor
-                                PowerAllocationWatts = $_.powerAllocationWatts
-                            }
+                            "DevicePresence: $($_.devicePresence), DeviceFormFactor: $($_.deviceFormFactor), PowerAllocationWatts: $($_.powerAllocationWatts)"
                         }
-                        $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value $deviceBaysInfo
+                        $deviceBaysInfoString = $deviceBaysInfo -join "; "
+                        $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value $deviceBaysInfoString
+                    } else {
+                        $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value "N/A"
                     }
                 }
                 catch {
                     Write-Error "Failed to retrieve location details for $($server.serverName). Error: $_"
+                    $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value "Error"
                 }
+            } else {
+                $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value "N/A"
             }
             $serverHardwareResults += $serverInfo
         }
