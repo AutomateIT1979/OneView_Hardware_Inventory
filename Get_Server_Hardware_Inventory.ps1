@@ -3,11 +3,9 @@ param (
     [Parameter(Mandatory = $true)]
     [string]$Appliance
 )
-
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
-
     # Initialize connection to OneView appliance
     try {
         $ovw = Connect-OVMgmt -Appliance $Appliance
@@ -16,14 +14,13 @@ Begin {
         }
         Write-Host "Connected to appliance: $($ovw.Name)"
         # Extract appliance name from FQDN and convert to uppercase
-        $global:applianceName = $Appliance.Split('.')[0].ToUpper()
+        $applianceName = $Appliance.Split('.')[0].ToUpper()
     }
     catch {
         Write-Error "OneView appliance connection failed: $_"
         throw
     }
 }
-
 Process {
     Write-Host "Getting all server hardware from appliance: $($ovw.Name)"
     try {
@@ -32,32 +29,29 @@ Process {
             throw "Failed to retrieve server hardware information."
         }
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
-
         $serverHardwareResults = @()
         $enclosureSlots = @{}
-        
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
                 ApplianceName        = $global:applianceName
                 ServerName          = $server.serverName
                 FormFactor          = $server.formFactor
-                Model               = $server.model
+                Model            = $server.model
                 Generation          = $server.generation
                 MemoryGB            = [math]::round($server.memoryMB / 1024, 2)
-                OperatingSystem     = $server.operatingSystem
+                OperatingSystem      = $server.operatingSystem
                 Position            = $server.position
-                ProcessorCoreCount   = $server.processorCoreCount
-                ProcessorCount       = $server.processorCount
-                ProcessorSpeedMHz   = $server.processorSpeedMhz
-                ProcessorType       = $server.processorType
+                ProcessorCoreCount    = $server.processorCoreCount
+                ProcessorCount        = $server.processorCount
+                ProcessorSpeedMHz    = $server.processorSpeedMhz
+                ProcessorType        = $server.processorType
                 SerialNumber        = $server.serialNumber
-                LocationUri         = $server.locationUri
+                LocationUri        = $server.locationUri
                 LocationSerialNumber = $null
-                DevicePresence       = $null
-                DeviceFormFactor     = $null
+                DevicePresence        = $null
+                DeviceFormFactor      = $null
                 PowerAllocationWatts = $null
             }
-
             # Fetch additional details using LocationUri
             if ($server.locationUri) {
                 try {
@@ -65,10 +59,8 @@ Process {
                     if ($null -eq $locationDetails) {
                         throw "Failed to retrieve location details."
                     }
-
                     # Update the serverInfo object with additional details
                     $serverInfo.LocationSerialNumber = $locationDetails.serialNumber
-
                     if ($locationDetails.deviceBays) {
                         # Assuming we are interested in the first device bay for simplicity
                         $firstDeviceBay = $locationDetails.deviceBays[0]
@@ -76,7 +68,6 @@ Process {
                         $serverInfo.DeviceFormFactor = $firstDeviceBay.deviceFormFactor
                         $serverInfo.PowerAllocationWatts = $firstDeviceBay.powerAllocationWatts
                     }
-
                     # Collect enclosure information for slot availability
                     if ($locationDetails.enclosureUri) {
                         $enclosureUri = $locationDetails.enclosureUri
@@ -89,9 +80,9 @@ Process {
                             }
                             if (-not $enclosureSlots.ContainsKey($enclosureDetails.serialNumber)) {
                                 $enclosureSlots[$enclosureDetails.serialNumber] = [PSCustomObject]@{
-                                    ApplianceName        = $global:applianceName
+                                    ApplianceName          = $global:applianceName
                                     EnclosureSerialNumber = $enclosureDetails.serialNumber
-                                    AvailableSlots       = 0
+                                    AvailableSlots        = 0
                                 }
                             }
                         }
@@ -104,30 +95,51 @@ Process {
                     Write-Error "Failed to retrieve location details for $($server.serverName). Error: $_"
                 }
             }
-
             $serverHardwareResults += $serverInfo
         }
-
-        # Export server hardware to Excel
+        # Export to CSV
+        $serverHardwareOutputCsv = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').csv"
+        $serverHardwareResults | Export-Csv -Path $serverHardwareOutputCsv -NoTypeInformation -Delimiter ";" -Encoding UTF8
+        Write-Host "Server hardware results exported to $serverHardwareOutputCsv"
+        # Export to Excel
         $serverHardwareOutputXlsx = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
-
-        # Export enclosure slot availability to the same Excel file
+        $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
+        # Add LocationUri information to a new worksheet
+        $locationWorksheetName = "LocationUri"
+        $locationUriList = $serverHardwareResults | Select-Object -Unique LocationUri
+        if ($locationUriList.Count -gt 0) {
+            Write-Host "Exporting LocationUri information to worksheet."
+            $locationUriList | Export-Excel -ExcelPackage $workbook -WorkSheetname $locationWorksheetName -AutoSize -BoldTopRow
+        } else {
+            Write-Host "No LocationUri information to export."
+        }
+        # Add enclosure slot availability to a new worksheet
+        $enclosureWorksheetName = "EnclosureSlots"
         $enclosureSlotList = $enclosureSlots.Values
         if ($enclosureSlotList.Count -gt 0) {
-            Write-Host "Exporting enclosure slot information to a new worksheet in the same file."
-            $enclosureSlotList | Export-Excel -Path $serverHardwareOutputXlsx -Append -WorkSheetname "EnclosureSlots" -AutoSize -BoldTopRow
+            Write-Host "Exporting enclosure slot information to worksheet."
+            $enclosureSlotList | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
         } else {
             Write-Host "No enclosure slot information to export."
         }
-
-        Write-Host "Server hardware and enclosure slot results exported to $serverHardwareOutputXlsx"
+        # Apply design to all worksheets
+        foreach ($worksheet in $workbook.Workbook.Worksheets) {
+            $worksheet.Cells.Style.HorizontalAlignment = 'Left'
+            $worksheet.Cells.Style.VerticalAlignment = 'Top'
+            $worksheet.Cells.AutoFitColumns()
+            $worksheet.Cells["A1"].EntireRow.Style.Font.Bold = $true  # Bold the first row
+            $worksheet.Cells["A1"].EntireRow.Style.Fill.PatternType = 'Solid'
+            $worksheet.Cells["A1"].EntireRow.Style.Fill.BackgroundColor.SetColor('Yellow')
+            $worksheet.Cells["A1"].EntireRow.Style.Font.Color.SetColor('Black')
+        }
+        Close-ExcelPackage $workbook
+        Write-Host "Server hardware, LocationUri, and enclosure slot results exported to $serverHardwareOutputXlsx"
     }
     catch {
         Write-Error "Failed to retrieve server hardware from appliance: $($ovw.Name). Error: $_"
     }
 }
-
 End {
     try {
         Disconnect-OVMgmt -ApplianceConnection $ovw
