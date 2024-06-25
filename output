@@ -1,1 +1,6 @@
-Write-Error: Failed to retrieve server hardware from appliance: xdip.local. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.1417.xlsx"
+Exporting location details to worksheet.
+Write-Error: D:\Script Sabri\OneView_Hardware_Inventory\Get_Server_Hardware_Inventory.ps1:130
+Line |
+ 130 |          Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $work …
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Failed to save workbook. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file D:\Script Sabri\OneView_Hardware_Inventory\ServerHardware-MAR-D1-AD08-CP-2024.06.25.151223.xlsx"
