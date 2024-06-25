@@ -20,7 +20,8 @@ function Save-Workbook {
             return
         }
         catch {
-            Write-Error "Attempt ${attempt}: Failed to save workbook. Error: $_"
+            # Comment the line below to suppress the error message
+            # Write-Error "Attempt $attempt: Failed to save workbook. Error: $_"
             if ($attempt -eq $maxAttempts) {
                 throw "Failed to save workbook after $maxAttempts attempts."
             }
