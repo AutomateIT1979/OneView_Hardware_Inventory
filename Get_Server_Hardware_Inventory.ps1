@@ -14,7 +14,7 @@ Begin {
         }
         Write-Host "Connected to appliance: $($ovw.Name)"
         # Extract appliance name from FQDN and convert to uppercase
-        $applianceName = $Appliance.Split('.')[0].ToUpper()
+        $global:applianceName = $Appliance.Split('.')[0].ToUpper()
     }
     catch {
         Write-Error "OneView appliance connection failed: $_"
