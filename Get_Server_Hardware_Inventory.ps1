@@ -2,15 +2,21 @@
 param (
     [Parameter(Mandatory = $true)]
     [string]$Appliance,
+
     [Parameter(Mandatory = $true)]
-    [string]$ApiToken
+    [string]$Username,
+
+    [Parameter(Mandatory = $true)]
+    [SecureString]$Password
 )
+
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
+
     # Initialize connection to OneView appliance
     try {
-        $ovw = Connect-OVMgmt -Appliance $Appliance -Token $ApiToken
+        $ovw = Connect-OVMgmt -Appliance $Appliance -Credential (New-Object System.Management.Automation.PSCredential($Username, (ConvertTo-SecureString $Password -AsPlainText -Force)))
         Write-Host "Connected to appliance: $($ovw.Name)"
         # Extract appliance name from FQDN and convert to uppercase
         $global:applianceName = $Appliance.Split('.')[0].ToUpper()
