@@ -1,14 +1,19 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $true)]
-    [string]$Appliance
+    [string]$Appliance,
+    [Parameter(Mandatory = $true)]
+    [string]$ApiToken
 )
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
     # Initialize connection to OneView appliance
     try {
-        $ovw = Connect-OVMgmt -Appliance $Appliance
+        $ovw = Connect-OVMgmt -Appliance $Appliance -Token $ApiToken
+        if ($null -eq $ovw) {
+            throw "Failed to connect to OneView appliance."
+        }
         Write-Host "Connected to appliance: $($ovw.Name)"
         # Extract appliance name from FQDN and convert to uppercase
         $global:applianceName = $Appliance.Split('.')[0].ToUpper()
@@ -22,6 +27,9 @@ Process {
     Write-Host "Getting all server hardware from appliance: $($ovw.Name)"
     try {
         $serverHardware = Send-OVRequest -Uri "/rest/server-hardware" -Method GET -ApplianceConnection $ovw
+        if ($null -eq $serverHardware -or $null -eq $serverHardware.members) {
+            throw "Failed to retrieve server hardware information."
+        }
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
         $serverHardwareResults = @()
         $enclosureSlots = @()
@@ -50,6 +58,9 @@ Process {
             if ($server.locationUri) {
                 try {
                     $locationDetails = Send-OVRequest -Uri $server.locationUri -Method GET -ApplianceConnection $ovw
+                    if ($null -eq $locationDetails) {
+                        throw "Failed to retrieve location details."
+                    }
                     # Update the serverInfo object with additional details
                     $serverInfo.LocationSerialNumber = $locationDetails.serialNumber
                     if ($locationDetails.deviceBays) {
@@ -63,6 +74,9 @@ Process {
                     if ($locationDetails.enclosureUri) {
                         $enclosureUri = $locationDetails.enclosureUri
                         $enclosureDetails = Send-OVRequest -Uri $enclosureUri -Method GET -ApplianceConnection $ovw
+                        if ($null -eq $enclosureDetails) {
+                            throw "Failed to retrieve enclosure details."
+                        }
                         $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
                         $enclosureInfo = [PSCustomObject]@{
                             ApplianceName = $global:applianceName
