@@ -71,17 +71,21 @@ Process {
                     # Collect enclosure information for slot availability
                     if ($locationDetails.enclosureUri) {
                         $enclosureUri = $locationDetails.enclosureUri
-                        $enclosureDetails = Send-OVRequest -Uri $enclosureUri -Method GET -ApplianceConnection $ovw
-                        if ($null -eq $enclosureDetails) {
-                            throw "Failed to retrieve enclosure details."
+                        if ($null -eq $enclosureUri) {
+                            Write-Warning "No enclosureUri for server: $($server.serverName)"
+                        } else {
+                            $enclosureDetails = Send-OVRequest -Uri $enclosureUri -Method GET -ApplianceConnection $ovw
+                            if ($null -eq $enclosureDetails) {
+                                throw "Failed to retrieve enclosure details."
+                            }
+                            $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
+                            $enclosureInfo = [PSCustomObject]@{
+                                ApplianceName = $global:applianceName
+                                EnclosureSerialNumber = $enclosureDetails.serialNumber
+                                AvailableSlots = $availableSlots
+                            }
+                            $enclosureSlots += $enclosureInfo
                         }
-                        $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
-                        $enclosureInfo = [PSCustomObject]@{
-                            ApplianceName = $global:applianceName
-                            EnclosureSerialNumber = $enclosureDetails.serialNumber
-                            AvailableSlots = $availableSlots
-                        }
-                        $enclosureSlots += $enclosureInfo
                     }
                 }
                 catch {
@@ -100,16 +104,22 @@ Process {
         $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
         # Add enclosure slot availability to a new worksheet
         $enclosureWorksheetName = "EnclosureSlots"
-        $enclosureSlots | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
+        if ($enclosureSlots.Count -gt 0) {
+            $enclosureSlots | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
+        } else {
+            Write-Host "No enclosure slot information to export."
+        }
         # Apply design to the new worksheet
         $worksheet = $workbook.Workbook.Worksheets[$enclosureWorksheetName]
-        $worksheet.Cells.Style.HorizontalAlignment = 'Left'
-        $worksheet.Cells.Style.VerticalAlignment = 'Top'
-        $worksheet.Cells.AutoFitColumns()
-        $worksheet.Cells["A1:C1"].Style.Font.Bold = $true
-        $worksheet.Cells["A1:C1"].Style.Fill.PatternType = 'Solid'
-        $worksheet.Cells["A1:C1"].Style.Fill.BackgroundColor.SetColor('Yellow')
-        $worksheet.Cells["A1:C1"].Style.Font.Color.SetColor('Black')
+        if ($null -ne $worksheet) {
+            $worksheet.Cells.Style.HorizontalAlignment = 'Left'
+            $worksheet.Cells.Style.VerticalAlignment = 'Top'
+            $worksheet.Cells.AutoFitColumns()
+            $worksheet.Cells["A1:C1"].Style.Font.Bold = $true
+            $worksheet.Cells["A1:C1"].Style.Fill.PatternType = 'Solid'
+            $worksheet.Cells["A1:C1"].Style.Fill.BackgroundColor.SetColor('Yellow')
+            $worksheet.Cells["A1:C1"].Style.Font.Color.SetColor('Black')
+        }
         Close-ExcelPackage $workbook
         Write-Host "Server hardware and enclosure slot results exported to $serverHardwareOutputXlsx"
     }
