@@ -24,6 +24,7 @@ Process {
         $serverHardware = Send-OVRequest -Uri "/rest/server-hardware" -Method GET -ApplianceConnection $ovw
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
         $serverHardwareResults = @()
+        $enclosureSlots = @()
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
                 ApplianceName        = $global:applianceName
@@ -58,6 +59,18 @@ Process {
                         $serverInfo.DeviceFormFactor = $firstDeviceBay.deviceFormFactor
                         $serverInfo.PowerAllocationWatts = $firstDeviceBay.powerAllocationWatts
                     }
+                    # Collect enclosure information for slot availability
+                    if ($locationDetails.enclosureUri) {
+                        $enclosureUri = $locationDetails.enclosureUri
+                        $enclosureDetails = Send-OVRequest -Uri $enclosureUri -Method GET -ApplianceConnection $ovw
+                        $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
+                        $enclosureInfo = [PSCustomObject]@{
+                            ApplianceName = $global:applianceName
+                            EnclosureSerialNumber = $enclosureDetails.serialNumber
+                            AvailableSlots = $availableSlots
+                        }
+                        $enclosureSlots += $enclosureInfo
+                    }
                 }
                 catch {
                     Write-Error "Failed to retrieve location details for $($server.serverName). Error: $_"
@@ -73,17 +86,20 @@ Process {
         $serverHardwareOutputXlsx = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
         $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
-        $worksheet = $workbook.Workbook.Worksheets["ServerHardware"]
-        # Apply design
+        # Add enclosure slot availability to a new worksheet
+        $enclosureWorksheetName = "EnclosureSlots"
+        $enclosureSlots | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
+        # Apply design to the new worksheet
+        $worksheet = $workbook.Workbook.Worksheets[$enclosureWorksheetName]
         $worksheet.Cells.Style.HorizontalAlignment = 'Left'
         $worksheet.Cells.Style.VerticalAlignment = 'Top'
         $worksheet.Cells.AutoFitColumns()
-        $worksheet.Cells["A1:Z1"].Style.Font.Bold = $true
-        $worksheet.Cells["A1:Z1"].Style.Fill.PatternType = 'Solid'
-        $worksheet.Cells["A1:Z1"].Style.Fill.BackgroundColor.SetColor('Yellow')
-        $worksheet.Cells["A1:Z1"].Style.Font.Color.SetColor('Black')
+        $worksheet.Cells["A1:C1"].Style.Font.Bold = $true
+        $worksheet.Cells["A1:C1"].Style.Fill.PatternType = 'Solid'
+        $worksheet.Cells["A1:C1"].Style.Fill.BackgroundColor.SetColor('Yellow')
+        $worksheet.Cells["A1:C1"].Style.Font.Color.SetColor('Black')
         Close-ExcelPackage $workbook
-        Write-Host "Server hardware results exported to $serverHardwareOutputXlsx"
+        Write-Host "Server hardware and enclosure slot results exported to $serverHardwareOutputXlsx"
     }
     catch {
         Write-Error "Failed to retrieve server hardware from appliance: $($ovw.Name). Error: $_"
