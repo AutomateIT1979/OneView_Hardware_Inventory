@@ -34,8 +34,8 @@ Process {
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
 
         $serverHardwareResults = @()
-        $enclosureSlots = @()
-
+        $enclosureSlots = @{}
+        
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
                 ApplianceName        = $global:applianceName
@@ -87,15 +87,16 @@ Process {
                             if ($null -eq $enclosureDetails) {
                                 throw "Failed to retrieve enclosure details."
                             }
-                            $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
-                            Write-Host "Enclosure $($enclosureDetails.serialNumber) has $availableSlots available slots."
-                            
-                            $enclosureInfo = [PSCustomObject]@{
-                                ApplianceName = $global:applianceName
-                                EnclosureSerialNumber = $enclosureDetails.serialNumber
-                                AvailableSlots = $availableSlots
+                            if (-not $enclosureSlots.ContainsKey($enclosureDetails.serialNumber)) {
+                                $enclosureSlots[$enclosureDetails.serialNumber] = [PSCustomObject]@{
+                                    ApplianceName         = $global:applianceName
+                                    EnclosureSerialNumber = $enclosureDetails.serialNumber
+                                    AvailableSlots        = 0
+                                }
                             }
-                            $enclosureSlots += $enclosureInfo
+                            $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
+                            $enclosureSlots[$enclosureDetails.serialNumber].AvailableSlots += $availableSlots
+                            Write-Host "Enclosure $($enclosureDetails.serialNumber) has $availableSlots available slots."
                         }
                     }
                 }
@@ -119,9 +120,10 @@ Process {
 
         # Add enclosure slot availability to a new worksheet
         $enclosureWorksheetName = "EnclosureSlots"
-        if ($enclosureSlots.Count -gt 0) {
+        $enclosureSlotList = $enclosureSlots.Values
+        if ($enclosureSlotList.Count -gt 0) {
             Write-Host "Exporting enclosure slot information to worksheet."
-            $enclosureSlots | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
+            $enclosureSlotList | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
         } else {
             Write-Host "No enclosure slot information to export."
         }
