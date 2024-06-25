@@ -1,1 +1,1 @@
-Write-Error: Failed to retrieve server hardware from appliance: xdip.local. Error: A parameter cannot be found that matches parameter name 'OutputPath'.
+Write-Error: Failed to retrieve server hardware from appliance: xdip.local. Error: Exception calling "SaveAs" with "1" argument(s): "Error saving file C:\Windows\system32\ServerHardware-MAR-D1-AD08-CP-2024.06.25.1403.xlsx"
