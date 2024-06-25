@@ -3,9 +3,11 @@ param (
     [Parameter(Mandatory = $true)]
     [string]$Appliance
 )
+
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
+
     function Save-Workbook {
         param (
             [Parameter(Mandatory = $true)]
@@ -13,15 +15,27 @@ Begin {
             [Parameter(Mandatory = $true)]
             [object]$Workbook
         )
-        try {
-            $Workbook.SaveAs($Path)
-            Close-ExcelPackage $Workbook
-            Write-Host "Workbook saved successfully to $Path"
-        }
-        catch {
-            Write-Error "Failed to save workbook. Error: $_"
+
+        $maxAttempts = 5
+        $attempt = 1
+        while ($attempt -le $maxAttempts) {
+            try {
+                $Workbook.SaveAs($Path)
+                Close-ExcelPackage $Workbook
+                Write-Host "Workbook saved successfully to $Path"
+                return
+            }
+            catch {
+                Write-Error "Attempt $attempt: Failed to save workbook. Error: $_"
+                if ($attempt -eq $maxAttempts) {
+                    throw "Failed to save workbook after $maxAttempts attempts."
+                }
+                Start-Sleep -Seconds 5
+                $attempt++
+            }
         }
     }
+
     # Initialize connection to OneView appliance
     try {
         $ovw = Connect-OVMgmt -Appliance $Appliance
@@ -30,13 +44,14 @@ Begin {
         }
         Write-Host "Connected to appliance: $($ovw.Name)"
         # Extract appliance name from FQDN and convert to uppercase
-        $global:applianceName = $Appliance.Split('.')[0].ToUpper()
+        $global:applianceName = ($Appliance.Split('.')[0]).ToUpper()
     }
     catch {
         Write-Error "OneView appliance connection failed: $_"
         throw
     }
 }
+
 Process {
     Write-Host "Getting all server hardware from appliance: $($ovw.Name)"
     try {
@@ -45,7 +60,9 @@ Process {
             throw "Failed to retrieve server hardware information."
         }
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
+
         $serverHardwareResults = @()
+
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
                 ApplianceName               = $global:applianceName
@@ -63,15 +80,20 @@ Process {
                 'SerialNumber[Server]'      = $server.serialNumber
                 LocationUri                 = $server.locationUri
             }
+
             $serverHardwareResults += $serverInfo
         }
+
         # Set the output path to the same directory where the script is executed
-        $serverHardwareOutputXlsx = Join-Path -Path $PSScriptRoot -ChildPath "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmmss').xlsx"
+        $serverHardwareOutputXlsx = Join-Path -Path $PSScriptRoot -ChildPath ("ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmmss').xlsx")
+
         # Export to Excel
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
         Write-Host "Server hardware results exported to $serverHardwareOutputXlsx"
+
         # Pause for a moment to ensure the workbook is saved
         Start-Sleep -Seconds 5
+
         # Reopen the workbook to verify it was created correctly
         $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
         if ($workbook.Workbook.Worksheets["ServerHardware"]) {
@@ -79,6 +101,7 @@ Process {
         } else {
             throw "Failed to create the ServerHardware worksheet."
         }
+
         # Collect additional information using LocationUri
         $locationDetailsResults = @()
         foreach ($server in $serverHardwareResults) {
@@ -89,9 +112,11 @@ Process {
                         # Collect necessary details from locationDetails
                         $enclosureUri = $locationDetails.enclosureUri
                         $deviceBays = $locationDetails.deviceBays
+
                         $usedSlots = ($deviceBays | Where-Object { $_.devicePresence -eq 'Present' }).Count
                         $availableSlots = $locationDetails.deviceBayCount - $usedSlots
                         $percentageAvailable = ($availableSlots / $locationDetails.deviceBayCount) * 100
+
                         $locationDetailsInfo = [PSCustomObject]@{
                             ApplianceName         = $global:applianceName
                             EnclosureUri          = $enclosureUri
@@ -100,6 +125,7 @@ Process {
                             AvailableSlots        = $availableSlots
                             PercentageAvailable   = [math]::round($percentageAvailable, 2)
                         }
+
                         $locationDetailsResults += $locationDetailsInfo
                     }
                 }
@@ -108,6 +134,7 @@ Process {
                 }
             }
         }
+
         # Add location details to a new worksheet
         $locationDetailsWorksheetName = "LocationDetails"
         if ($locationDetailsResults.Count -gt 0) {
@@ -116,6 +143,7 @@ Process {
         } else {
             Write-Host "No location details information to export."
         }
+
         # Apply design to all worksheets
         foreach ($worksheet in $workbook.Workbook.Worksheets) {
             $worksheet.Cells.Style.HorizontalAlignment = 'Left'
@@ -126,6 +154,7 @@ Process {
             $worksheet.Cells["A1"].EntireRow.Style.Fill.BackgroundColor.SetColor('Yellow')
             $worksheet.Cells["A1"].EntireRow.Style.Font.Color.SetColor('Black')
         }
+
         # Save the workbook
         Save-Workbook -Path $serverHardwareOutputXlsx -Workbook $workbook
     }
@@ -133,6 +162,7 @@ Process {
         Write-Error "Failed to retrieve server hardware from appliance: $($ovw.Name). Error: $_"
     }
 }
+
 End {
     try {
         Disconnect-OVMgmt -ApplianceConnection $ovw
