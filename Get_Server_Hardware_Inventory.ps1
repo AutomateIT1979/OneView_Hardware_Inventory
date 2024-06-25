@@ -39,19 +39,19 @@ Process {
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
                 ApplianceName        = $global:applianceName
-                ServerName           = $server.serverName
-                FormFactor           = $server.formFactor
-                Model                = $server.model
-                Generation           = $server.generation
-                MemoryGB             = [math]::round($server.memoryMB / 1024, 2)
-                OperatingSystem      = $server.operatingSystem
-                Position             = $server.position
+                ServerName          = $server.serverName
+                FormFactor          = $server.formFactor
+                Model               = $server.model
+                Generation          = $server.generation
+                MemoryGB            = [math]::round($server.memoryMB / 1024, 2)
+                OperatingSystem     = $server.operatingSystem
+                Position            = $server.position
                 ProcessorCoreCount   = $server.processorCoreCount
                 ProcessorCount       = $server.processorCount
-                ProcessorSpeedMHz    = $server.processorSpeedMhz
-                ProcessorType        = $server.processorType
-                SerialNumber         = $server.serialNumber
-                LocationUri          = $server.locationUri
+                ProcessorSpeedMHz   = $server.processorSpeedMhz
+                ProcessorType       = $server.processorType
+                SerialNumber        = $server.serialNumber
+                LocationUri         = $server.locationUri
                 LocationSerialNumber = $null
                 DevicePresence       = $null
                 DeviceFormFactor     = $null
@@ -89,15 +89,15 @@ Process {
                             }
                             if (-not $enclosureSlots.ContainsKey($enclosureDetails.serialNumber)) {
                                 $enclosureSlots[$enclosureDetails.serialNumber] = [PSCustomObject]@{
-                                    ApplianceName         = $global:applianceName
+                                    ApplianceName        = $global:applianceName
                                     EnclosureSerialNumber = $enclosureDetails.serialNumber
-                                    AvailableSlots        = 0
+                                    AvailableSlots       = 0
                                 }
                             }
-                            $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
-                            $enclosureSlots[$enclosureDetails.serialNumber].AvailableSlots += $availableSlots
-                            Write-Host "Enclosure $($enclosureDetails.serialNumber) has $availableSlots available slots."
                         }
+                        $availableSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Absent' }).Count
+                        $enclosureSlots[$enclosureDetails.serialNumber].AvailableSlots += $availableSlots
+                        Write-Host "Enclosure $($enclosureDetails.serialNumber) has $availableSlots available slots."
                     }
                 }
                 catch {
@@ -108,39 +108,18 @@ Process {
             $serverHardwareResults += $serverInfo
         }
 
-        # Export to CSV
-        $serverHardwareOutputCsv = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').csv"
-        $serverHardwareResults | Export-Csv -Path $serverHardwareOutputCsv -NoTypeInformation -Delimiter ";" -Encoding UTF8
-        Write-Host "Server hardware results exported to $serverHardwareOutputCsv"
-
-        # Export to Excel
+        # Export server hardware to Excel
         $serverHardwareOutputXlsx = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
-        $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
 
-        # Add enclosure slot availability to a new worksheet
-        $enclosureWorksheetName = "EnclosureSlots"
+        # Export enclosure slot availability to the same Excel file
         $enclosureSlotList = $enclosureSlots.Values
         if ($enclosureSlotList.Count -gt 0) {
-            Write-Host "Exporting enclosure slot information to worksheet."
-            $enclosureSlotList | Export-Excel -ExcelPackage $workbook -WorkSheetname $enclosureWorksheetName -AutoSize -BoldTopRow
+            Write-Host "Exporting enclosure slot information to a new worksheet in the same file."
+            $enclosureSlotList | Export-Excel -Path $serverHardwareOutputXlsx -Append -WorkSheetname "EnclosureSlots" -AutoSize -BoldTopRow
         } else {
             Write-Host "No enclosure slot information to export."
         }
-
-        # Apply design to the new worksheet
-        $worksheet = $workbook.Workbook.Worksheets[$enclosureWorksheetName]
-        if ($null -ne $worksheet) {
-            $worksheet.Cells.Style.HorizontalAlignment = 'Left'
-            $worksheet.Cells.Style.VerticalAlignment = 'Top'
-            $worksheet.Cells.AutoFitColumns()
-            $worksheet.Cells["A1:C1"].Style.Font.Bold = $true
-            $worksheet.Cells["A1:C1"].Style.Fill.PatternType = 'Solid'
-            $worksheet.Cells["A1:C1"].Style.Fill.BackgroundColor.SetColor('Yellow')
-            $worksheet.Cells["A1:C1"].Style.Font.Color.SetColor('Black')
-        }
-
-        Close-ExcelPackage $workbook
 
         Write-Host "Server hardware and enclosure slot results exported to $serverHardwareOutputXlsx"
     }
