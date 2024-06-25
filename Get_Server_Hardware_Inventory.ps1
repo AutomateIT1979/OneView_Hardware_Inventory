@@ -3,9 +3,11 @@ param (
     [Parameter(Mandatory = $true)]
     [string]$Appliance
 )
+
 Begin {
     # Load necessary modules
     Import-Module ImportExcel
+
     # Initialize connection to OneView appliance
     try {
         $ovw = Connect-OVMgmt -Appliance $Appliance
@@ -21,6 +23,7 @@ Begin {
         throw
     }
 }
+
 Process {
     Write-Host "Getting all server hardware from appliance: $($ovw.Name)"
     try {
@@ -29,26 +32,29 @@ Process {
             throw "Failed to retrieve server hardware information."
         }
         Write-Host "Retrieved server hardware: $($serverHardware.members.Count)"
+
         $serverHardwareResults = @()
         $enclosureSlots = @{}
+
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
                 ApplianceName        = $global:applianceName
                 ServerName          = $server.serverName
                 FormFactor          = $server.formFactor
-                Model            = $server.model
+                Model               = $server.model
                 Generation          = $server.generation
                 MemoryGB            = [math]::round($server.memoryMB / 1024, 2)
-                OperatingSystem      = $server.operatingSystem
+                OperatingSystem     = $server.operatingSystem
                 Position            = $server.position
-                ProcessorCoreCount    = $server.processorCoreCount
-                ProcessorCount        = $server.processorCount
-                ProcessorSpeedMHz    = $server.processorSpeedMhz
-                ProcessorType        = $server.processorType
+                ProcessorCoreCount  = $server.processorCoreCount
+                ProcessorCount      = $server.processorCount
+                ProcessorSpeedMHz   = $server.processorSpeedMhz
+                ProcessorType       = $server.processorType
                 SerialNumber        = $server.serialNumber
-                LocationUri        = $server.locationUri
+                LocationUri         = $server.locationUri
                 LocationSerialNumber = $null
             }
+
             # Fetch additional details using LocationUri
             if ($server.locationUri) {
                 try {
@@ -56,8 +62,10 @@ Process {
                     if ($null -eq $locationDetails) {
                         throw "Failed to retrieve location details."
                     }
+
                     # Update the serverInfo object with additional details
                     $serverInfo.LocationSerialNumber = $locationDetails.serialNumber
+
                     # Collect enclosure information for slot availability
                     if ($locationDetails.enclosureUri) {
                         $enclosureUri = $locationDetails.enclosureUri
@@ -78,13 +86,16 @@ Process {
                                     PercentageAvailable   = 0
                                 }
                             }
+
                             # Calculate used and available slots
                             $usedSlots = ($enclosureDetails.deviceBays | Where-Object { $_.devicePresence -eq 'Present' }).Count
                             $availableSlots = $enclosureDetails.deviceBayCount - $usedSlots
                             $percentageAvailable = ($availableSlots / $enclosureDetails.deviceBayCount) * 100
+
                             $enclosureSlots[$enclosureDetails.serialNumber].UsedSlots = $usedSlots
                             $enclosureSlots[$enclosureDetails.serialNumber].AvailableSlots = $availableSlots
                             $enclosureSlots[$enclosureDetails.serialNumber].PercentageAvailable = [math]::round($percentageAvailable, 2)
+
                             Write-Host "Enclosure $($enclosureDetails.serialNumber): Used slots: $usedSlots, Available slots: $availableSlots, Percentage available: $($enclosureSlots[$enclosureDetails.serialNumber].PercentageAvailable)%"
                         }
                     }
@@ -93,16 +104,15 @@ Process {
                     Write-Error "Failed to retrieve location details for $($server.serverName). Error: $_"
                 }
             }
+
             $serverHardwareResults += $serverInfo
         }
-        # Export to CSV
-        $serverHardwareOutputCsv = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').csv"
-        $serverHardwareResults | Export-Csv -Path $serverHardwareOutputCsv -NoTypeInformation -Delimiter ";" -Encoding UTF8
-        Write-Host "Server hardware results exported to $serverHardwareOutputCsv"
+
         # Export to Excel
         $serverHardwareOutputXlsx = "ServerHardware-$($global:applianceName)-$(Get-Date -format 'yyyy.MM.dd.HHmm').xlsx"
         $serverHardwareResults | Export-Excel -Path $serverHardwareOutputXlsx -AutoSize -BoldTopRow -WorkSheetname "ServerHardware"
         $workbook = Open-ExcelPackage -Path $serverHardwareOutputXlsx
+
         # Add enclosure slot availability to a new worksheet
         $enclosureWorksheetName = "EnclosureSlots"
         $enclosureSlotList = $enclosureSlots.Values
@@ -112,6 +122,7 @@ Process {
         } else {
             Write-Host "No enclosure slot information to export."
         }
+
         # Apply design to all worksheets
         foreach ($worksheet in $workbook.Workbook.Worksheets) {
             $worksheet.Cells.Style.HorizontalAlignment = 'Left'
@@ -122,13 +133,16 @@ Process {
             $worksheet.Cells["A1"].EntireRow.Style.Fill.BackgroundColor.SetColor('Yellow')
             $worksheet.Cells["A1"].EntireRow.Style.Font.Color.SetColor('Black')
         }
+
         Close-ExcelPackage $workbook
+
         Write-Host "Server hardware and enclosure slot results exported to $serverHardwareOutputXlsx"
     }
     catch {
         Write-Error "Failed to retrieve server hardware from appliance: $($ovw.Name). Error: $_"
     }
 }
+
 End {
     try {
         Disconnect-OVMgmt -ApplianceConnection $ovw
@@ -138,4 +152,3 @@ End {
         Write-Error "Failed to disconnect from appliance: $($ovw.Name). Error: $_"
     }
 }
-
