@@ -26,43 +26,42 @@ Process {
         $serverHardwareResults = @()
         foreach ($server in $serverHardware.members) {
             $serverInfo = [PSCustomObject]@{
-                ApplianceName      = $global:applianceName
-                ServerName         = $server.serverName
-                FormFactor         = $server.formFactor
-                Model              = $server.model
-                Generation         = $server.generation
-                MemoryGB           = [math]::round($server.memoryMB / 1024, 2)
-                OperatingSystem    = $server.operatingSystem
-                Position           = $server.position
-                ProcessorCoreCount = $server.processorCoreCount
-                ProcessorCount     = $server.processorCount
-                ProcessorSpeedMHz  = $server.processorSpeedMhz
-                ProcessorType      = $server.processorType
-                SerialNumber       = $server.serialNumber
-                LocationUri        = $server.locationUri
+                ApplianceName        = $global:applianceName
+                ServerName           = $server.serverName
+                FormFactor           = $server.formFactor
+                Model                = $server.model
+                Generation           = $server.generation
+                MemoryGB             = [math]::round($server.memoryMB / 1024, 2)
+                OperatingSystem      = $server.operatingSystem
+                Position             = $server.position
+                ProcessorCoreCount   = $server.processorCoreCount
+                ProcessorCount       = $server.processorCount
+                ProcessorSpeedMHz    = $server.processorSpeedMhz
+                ProcessorType        = $server.processorType
+                SerialNumber         = $server.serialNumber
+                LocationUri          = $server.locationUri
+                LocationSerialNumber = $null
+                DevicePresence       = $null
+                DeviceFormFactor     = $null
+                PowerAllocationWatts = $null
             }
             # Fetch additional details using LocationUri
             if ($server.locationUri) {
                 try {
                     $locationDetails = Send-OVRequest -Uri $server.locationUri -Method GET -ApplianceConnection $ovw
                     # Update the serverInfo object with additional details
-                    $serverInfo | Add-Member -MemberType NoteProperty -Name "LocationSerialNumber" -Value $locationDetails.serialNumber
+                    $serverInfo.LocationSerialNumber = $locationDetails.serialNumber
                     if ($locationDetails.deviceBays) {
-                        $deviceBaysInfo = $locationDetails.deviceBays | ForEach-Object {
-                            "DevicePresence: $($_.devicePresence), DeviceFormFactor: $($_.deviceFormFactor), PowerAllocationWatts: $($_.powerAllocationWatts)"
-                        }
-                        $deviceBaysInfoString = $deviceBaysInfo -join "; "
-                        $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value $deviceBaysInfoString
-                    } else {
-                        $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value "N/A"
+                        # Assuming we are interested in the first device bay for simplicity
+                        $firstDeviceBay = $locationDetails.deviceBays[0]
+                        $serverInfo.DevicePresence = $firstDeviceBay.devicePresence
+                        $serverInfo.DeviceFormFactor = $firstDeviceBay.deviceFormFactor
+                        $serverInfo.PowerAllocationWatts = $firstDeviceBay.powerAllocationWatts
                     }
                 }
                 catch {
                     Write-Error "Failed to retrieve location details for $($server.serverName). Error: $_"
-                    $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value "Error"
                 }
-            } else {
-                $serverInfo | Add-Member -MemberType NoteProperty -Name "DeviceBays" -Value "N/A"
             }
             $serverHardwareResults += $serverInfo
         }
