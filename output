@@ -1,0 +1,22 @@
+PS D:\Script Sabri\OneView_Hardware_Inventory> .\Get_Server_Hardware_Inventory.ps1
+
+cmdlet Get_Server_Hardware_Inventory.ps1 at command pipeline position 1
+Supply values for the following parameters:
+Appliance: xbiz.local
+
+cmdlet Connect-OVMgmt at command pipeline position 1
+Supply values for the following parameters:
+UserName: Administrator
+WARNING: Parameter 'UserName' is obsolete.
+Password: ********
+This management appliance is a company owned asset and provided for the exclusive use of authorized personnel. Unauthorized use or abuse of this system may lead to corrective action including termination, civil and/or criminal penalties.
+
+Connected to appliance: xbiz.local
+Getting all server hardware from appliance: xbiz.local
+Retrieved server hardware: 6
+Server hardware results exported to ServerHardware-MAR-D1-AD08-CP-2024.06.25.1150.csv
+Exporting LocationUri information to worksheet.
+No enclosure slot information to export.
+Write-Error: Failed to retrieve server hardware from appliance: xbiz.local. Error: Exception calling "Save" with "0" argument(s): "Object reference not set to an instance of an object."
+Disconnected from appliance: xbiz.local
+PS D:\Script Sabri\OneView_Hardware_Inventory>
